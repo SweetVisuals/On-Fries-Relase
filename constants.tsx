@@ -1,30 +1,30 @@
 import { MenuItem, Order, Customer, StockItem } from './types';
-import { Utensils, Coffee, Beer, Carrot } from 'lucide-react';
+import { Utensils, Coffee, Beer, Carrot, Apple } from 'lucide-react';
 import React from 'react';
 
 export const MOCK_MENU: MenuItem[] = [
-  {
-    id: '1',
-    name: 'Steak & Fries',
-    description: 'Premium steak served with crispy fries and signature seasoning.',
-    price: 12.00,
-    category: 'Main',
-    image: 'https://146870153.cdn6.editmysite.com/uploads/1/4/6/8/146870153/DXFSUZVE3QCNQ3N5KPF7ZJTE.png?width=1280&dpr=1',
-    image_url: 'https://146870153.cdn6.editmysite.com/uploads/1/4/6/8/146870153/DXFSUZVE3QCNQ3N5KPF7ZJTE.png?width=1280&dpr=1',
-    is_available: true,
-    time: '20 min'
-  },
-  {
-    id: '2',
-    name: 'Deluxe Steak & Fries',
-    description: 'Premium quality steak with our signature fries and special seasoning.',
-    price: 20.00,
-    category: 'Main',
-    image: 'https://146870153.cdn6.editmysite.com/uploads/1/4/6/8/146870153/6OOSSLNURTSVHRO36DLMV6C6.png?width=1280&dpr=1',
-    image_url: 'https://146870153.cdn6.editmysite.com/uploads/1/4/6/8/146870153/6OOSSLNURTSVHRO36DLMV6C6.png?width=1280&dpr=1',
-    is_available: true,
-    time: '25 min'
-  },
+   {
+     id: '2',
+     name: 'Deluxe Steak & Fries',
+     description: 'Premium quality steak with our signature fries and special seasoning.',
+     price: 20.00,
+     category: 'Main',
+     image: 'https://146870153.cdn6.editmysite.com/uploads/1/4/6/8/146870153/6OOSSLNURTSVHRO36DLMV6C6.png?width=1280&dpr=1',
+     image_url: 'https://146870153.cdn6.editmysite.com/uploads/1/4/6/8/146870153/6OOSSLNURTSVHRO36DLMV6C6.png?width=1280&dpr=1',
+     is_available: true,
+     time: '25 min'
+   },
+   {
+     id: '1',
+     name: 'Steak & Fries',
+     description: 'Premium steak served with crispy fries and signature seasoning.',
+     price: 12.00,
+     category: 'Main',
+     image: 'https://146870153.cdn6.editmysite.com/uploads/1/4/6/8/146870153/DXFSUZVE3QCNQ3N5KPF7ZJTE.png?width=1280&dpr=1',
+     image_url: 'https://146870153.cdn6.editmysite.com/uploads/1/4/6/8/146870153/DXFSUZVE3QCNQ3N5KPF7ZJTE.png?width=1280&dpr=1',
+     is_available: true,
+     time: '20 min'
+   },
   {
     id: '3',
     name: 'Steak Only',
@@ -41,7 +41,7 @@ export const MOCK_MENU: MenuItem[] = [
     name: 'Signature Fries',
     description: 'Our signature crispy fries with special seasoning.',
     price: 4.00,
-    category: 'Fries',
+    category: 'Sides',
     image: 'https://146870153.cdn6.editmysite.com/uploads/1/4/6/8/146870153/F4SJYJKOG4HP5W3QK3UUSJMK.png?width=1280&dpr=1',
     image_url: 'https://146870153.cdn6.editmysite.com/uploads/1/4/6/8/146870153/F4SJYJKOG4HP5W3QK3UUSJMK.png?width=1280&dpr=1',
     is_available: true,
@@ -71,8 +71,8 @@ export const MOCK_MENU: MenuItem[] = [
   },
   {
     id: '7',
-    name: 'Coca Cola',
-    description: 'Classic Coca-Cola soft drink.',
+    name: 'Coke',
+    description: 'Classic Coke soft drink.',
     price: 1.50,
     category: 'Drinks',
     image: 'https://146870153.cdn6.editmysite.com/uploads/1/4/6/8/146870153/YKJMQTYWVUGLVJ5B3ZCGQG2A.png?width=1280&dpr=1',
@@ -160,7 +160,7 @@ export const MOCK_STOCK: StockItem[] = [
   { id: 's9', name: 'Mayo', category: 'Food', quantity: 25, location: 'Trailer', supplier: '', notes: '', lowStockThreshold: 5 },
 
   // Trailer - Drinks
-  { id: 's10', name: 'Coca Cola', category: 'Drinks', quantity: 30, location: 'Trailer', supplier: '', notes: '', lowStockThreshold: 5 },
+  { id: 's10', name: 'Coke', category: 'Drinks', quantity: 30, location: 'Trailer', supplier: '', notes: '', lowStockThreshold: 5 },
   { id: 's11', name: 'Coke Zero', category: 'Drinks', quantity: 30, location: 'Trailer', supplier: '', notes: '', lowStockThreshold: 5 },
   { id: 's12', name: 'Tango Mango', category: 'Drinks', quantity: 30, location: 'Trailer', supplier: '', notes: '', lowStockThreshold: 5 },
   { id: 's13', name: 'Sprite', category: 'Drinks', quantity: 30, location: 'Trailer', supplier: '', notes: '', lowStockThreshold: 5 },
@@ -191,7 +191,7 @@ export const MOCK_STOCK: StockItem[] = [
   { id: 's32', name: 'Mayo', category: 'Food', quantity: 50, location: 'Lockup', supplier: '', notes: '', lowStockThreshold: 5 },
 
   // Lockup - Drinks
-  { id: 's33', name: 'Coca Cola', category: 'Drinks', quantity: 60, location: 'Lockup', supplier: '', notes: '', lowStockThreshold: 5 },
+  { id: 's33', name: 'Coke', category: 'Drinks', quantity: 60, location: 'Lockup', supplier: '', notes: '', lowStockThreshold: 5 },
   { id: 's34', name: 'Coke Zero', category: 'Drinks', quantity: 60, location: 'Lockup', supplier: '', notes: '', lowStockThreshold: 5 },
   { id: 's35', name: 'Tango Mango', category: 'Drinks', quantity: 60, location: 'Lockup', supplier: '', notes: '', lowStockThreshold: 5 },
   { id: 's36', name: 'Sprite', category: 'Drinks', quantity: 60, location: 'Lockup', supplier: '', notes: '', lowStockThreshold: 5 },
@@ -214,7 +214,7 @@ export const MOCK_STOCK: StockItem[] = [
 export const CATEGORIES = [
   { id: 'all', label: 'All', icon: null },
   { id: 'Main', label: 'Steak', icon: <Utensils className="w-4 h-4" /> },
-  { id: 'Fries', label: 'Fries', icon: <Beer className="w-4 h-4" /> },
+  { id: 'Sides', label: 'Fries', icon: <Apple className="w-4 h-4" /> },
   { id: 'Kids', label: 'Kids', icon: <Carrot className="w-4 h-4" /> },
   { id: 'Drinks', label: 'Drinks', icon: <Coffee className="w-4 h-4" /> },
 ];
@@ -222,13 +222,13 @@ export const CATEGORIES = [
 // Stock requirements for menu items
 // Maps menu item NAME to array of required stock item names
 export const MENU_STOCK_REQUIREMENTS: Record<string, string[]> = {
-  'Steak & Fries': ['Steaks', 'Fries'],
   'Deluxe Steak & Fries': ['Steaks', 'Fries'],
+  'Steak & Fries': ['Steaks', 'Fries'],
   'Steak Only': ['Steaks'],
   'Signature Fries': ['Fries'],
   'Kids Meal': ['Steaks', 'Fries'],
   'Kids Fries': ['Fries'],
-  'Coca Cola': ['Coca Cola'],
+  'Coke': ['Coke'],
   'Coke Zero': ['Coke Zero'],
   'Tango Mango': ['Tango Mango'],
   'Sprite': ['Sprite'],
@@ -241,7 +241,7 @@ export const ADDON_PRICES: Record<string, number> = {
   'Steak': 10.00,
   'Green Sauce': 0.50,
   'Red Sauce': 0.50,
-  'Coca Cola': 1.50,
+  'Coke': 1.50,
   'Coke Zero': 1.50,
   'Tango Mango': 1.50,
   'Sprite': 1.50,
@@ -249,34 +249,34 @@ export const ADDON_PRICES: Record<string, number> = {
 
 // Item addons mapping - defines which extras and sauces are available for each menu item
 export const ITEM_ADDONS: Record<string, { extras: string[], sauces: string[], drinks?: string[] }> = {
-  'Steak & Fries': {
-    extras: ['Short Rib', 'Lamb', 'Steak'],
-    sauces: ['Green Sauce', 'Red Sauce'],
-    drinks: ['Coca Cola', 'Coke Zero', 'Tango Mango', 'Sprite']
-  },
   'Deluxe Steak & Fries': {
     extras: ['Short Rib', 'Lamb', 'Steak'],
     sauces: ['Green Sauce', 'Red Sauce'],
-    drinks: ['Coca Cola', 'Coke Zero', 'Tango Mango', 'Sprite']
+    drinks: ['Coke', 'Coke Zero', 'Tango Mango', 'Sprite']
   },
-  'Signature Fries': {
-    extras: [],
-    sauces: ['Green Sauce', 'Red Sauce'],
-    drinks: ['Coca Cola', 'Coke Zero', 'Tango Mango', 'Sprite']
-  },
-  'Kids Meal': {
+  'Steak & Fries': {
     extras: ['Short Rib', 'Lamb', 'Steak'],
     sauces: ['Green Sauce', 'Red Sauce'],
-    drinks: ['Coca Cola', 'Coke Zero', 'Tango Mango', 'Sprite']
-  },
-  'Kids Fries': {
-    extras: [],
-    sauces: ['Green Sauce', 'Red Sauce'],
-    drinks: ['Coca Cola', 'Coke Zero', 'Tango Mango', 'Sprite']
+    drinks: ['Coke', 'Coke Zero', 'Tango Mango', 'Sprite']
   },
   'Steak Only': {
     extras: ['Short Rib', 'Lamb', 'Steak'],
     sauces: ['Green Sauce', 'Red Sauce'],
-    drinks: ['Coca Cola', 'Coke Zero', 'Tango Mango', 'Sprite']
+    drinks: ['Coke', 'Coke Zero', 'Tango Mango', 'Sprite']
+  },
+  'Signature Fries': {
+    extras: [],
+    sauces: ['Green Sauce', 'Red Sauce'],
+    drinks: ['Coke', 'Coke Zero', 'Tango Mango', 'Sprite']
+  },
+  'Kids Meal': {
+    extras: ['Short Rib', 'Lamb', 'Steak'],
+    sauces: ['Green Sauce', 'Red Sauce'],
+    drinks: ['Coke', 'Coke Zero', 'Tango Mango', 'Sprite']
+  },
+  'Kids Fries': {
+    extras: [],
+    sauces: ['Green Sauce', 'Red Sauce'],
+    drinks: ['Coke', 'Coke Zero', 'Tango Mango', 'Sprite']
   }
 };

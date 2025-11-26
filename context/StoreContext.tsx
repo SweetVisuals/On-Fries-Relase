@@ -10,12 +10,12 @@ const MOCK_STOCK: StockItem[] = [
 ];
 
 const MENU_STOCK_REQUIREMENTS: Record<string, string[]> = {
-  'Steak & Fries': ['Steaks'],
   'Deluxe Steak & Fries': ['Steaks'],
+  'Steak & Fries': ['Steaks'],
   'Steak Only': ['Steaks'],
   'Short Rib': ['Short Rib'],
   'Lamb': ['Lamb'],
-  'Coca Cola': ['Coca Cola'],
+  'Coke': ['Coke'],
   'Coke Zero': ['Coke Zero'],
   'Tango Mango': ['Tango Mango'],
   'Sprite': ['Sprite'],
@@ -146,7 +146,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       try {
         const { data, error } = await supabase
           .from('menu_items')
-          .select('*');
+          .select('*')
+          .order('display_order', { ascending: true });
 
         if (error) {
           console.error('Error fetching menu:', error);

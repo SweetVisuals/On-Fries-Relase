@@ -18,13 +18,14 @@ export const MenuPage = () => {
 
     // Only show these items in the main menu grid
     const validItems = [
-      'Steak & Fries',
       'Deluxe Steak & Fries',
+      'Steak & Fries',
       'Steak Only',
       'Signature Fries',
       'Kids Meal',
       'Kids Fries',
       'Coca Cola',
+      'Coke',
       'Coke Zero',
       'Tango Mango',
       'Sprite'
