@@ -18,7 +18,7 @@ interface AddonSelection {
 }
 
 export const CustomerItemModal: React.FC<CustomerItemModalProps> = ({ isOpen, onClose, item }) => {
-  const { menu, addToCart } = useStore();
+  const { menu, addToCart, settings } = useStore();
   const [quantity, setQuantity] = useState(1);
   const [selections, setSelections] = useState<Record<string, number>>({});
   const [selectedDrink, setSelectedDrink] = useState<string | null>(null);
@@ -342,10 +342,10 @@ export const CustomerItemModal: React.FC<CustomerItemModalProps> = ({ isOpen, on
 
             <button
               onClick={handleAddToCart}
-              disabled={item.name === 'Kids Meal' && (!selectedSauce || !selectedDrink)}
+              disabled={(item.name === 'Kids Meal' && (!selectedSauce || !selectedDrink)) || !settings?.is_store_open}
               className="flex-1 bg-brand-yellow hover:bg-yellow-400 text-black font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-yellow-900/20 uppercase tracking-wide text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <ShoppingBag className="w-5 h-5" /> Add to Cart
+              <ShoppingBag className="w-5 h-5" /> {!settings?.is_store_open ? 'Store Closed' : 'Add to Cart'}
             </button>
           </div>
         </div>

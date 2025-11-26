@@ -35,6 +35,7 @@ export interface Order {
   completedAt?: string;
   paymentId?: string;
   displayId?: string;
+  userId?: string;
 }
 
 export interface StockItem {

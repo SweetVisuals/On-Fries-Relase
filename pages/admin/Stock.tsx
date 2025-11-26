@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { AdminLayout } from '../../components/AdminLayout';
 import { useStore } from '../../context/StoreContext';
-import { RefreshCw, ChevronDown, Plus, Minus, AlertTriangle, PenTool, X, Check, Edit2, Save, X as XIcon, Eye, Trash2 } from 'lucide-react';
+import { ChevronDown, Plus, Minus, AlertTriangle, PenTool, X, Check, Edit2, Save, X as XIcon, Eye, Trash2 } from 'lucide-react';
 import { StockItem } from '../../types';
 import { StockModal } from '../../components/StockModal';
 import { SupplierModal } from '../../components/SupplierModal';
@@ -360,9 +360,6 @@ export const StockPage = () => {
               className="px-4 py-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
             >
               <Plus className="w-4 h-4" /> Add Supplier
-            </button>
-            <button className="px-4 py-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
-              <RefreshCw className="w-4 h-4" /> Sync
             </button>
           </div>
         </div>

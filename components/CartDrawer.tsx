@@ -11,7 +11,7 @@ interface CartDrawerProps {
 }
 
 export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
-  const { cart, removeFromCart, clearCart, addOrder, settings } = useStore();
+  const { cart, removeFromCart, clearCart, addOrder, settings, user } = useStore();
   const [isProcessing, setIsProcessing] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
@@ -283,14 +283,25 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                   </div>
 
                   <div className="space-y-3">
-                    <button
-                      onClick={handleCheckout}
-                      disabled={cart.length === 0 || !settings?.is_store_open}
-                      className="w-full py-4 bg-brand-yellow text-black font-bold text-lg rounded-xl hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-yellow-900/20 flex justify-center items-center gap-2"
-                    >
-                      <CreditCard className="w-5 h-5" />
-                      {!settings?.is_store_open ? 'Store Closed' : 'Pay Securely'}
-                    </button>
+                    {!user ? (
+                      <Link
+                        to="/profile"
+                        onClick={onClose}
+                        className="w-full py-4 bg-brand-yellow text-black font-bold text-lg rounded-xl hover:bg-yellow-400 transition-all shadow-lg shadow-yellow-900/20 flex justify-center items-center gap-2"
+                      >
+                        <CreditCard className="w-5 h-5" />
+                        Log In to Order
+                      </Link>
+                    ) : (
+                      <button
+                        onClick={handleCheckout}
+                        disabled={cart.length === 0 || !settings?.is_store_open}
+                        className="w-full py-4 bg-brand-yellow text-black font-bold text-lg rounded-xl hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-yellow-900/20 flex justify-center items-center gap-2"
+                      >
+                        <CreditCard className="w-5 h-5" />
+                        {!settings?.is_store_open ? 'Store Closed' : 'Pay Securely'}
+                      </button>
+                    )}
 
                     <button
                       onClick={clearCart}

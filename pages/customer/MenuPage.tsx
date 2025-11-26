@@ -7,7 +7,7 @@ import { CustomerItemModal } from '../../components/CustomerItemModal';
 import { useStore } from '../../context/StoreContext';
 
 export const MenuPage = () => {
-  const { filteredMenu } = useStore();
+  const { filteredMenu, settings } = useStore();
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
@@ -91,9 +91,10 @@ export const MenuPage = () => {
                   </div>
                   <button
                     onClick={() => setSelectedItem(item)}
-                    className="bg-brand-yellow text-black px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-yellow-400 transition-colors shadow-lg shadow-yellow-900/20"
+                    disabled={!settings?.is_store_open}
+                    className="bg-brand-yellow text-black px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-yellow-900/20"
                   >
-                    <Plus className="w-4 h-4" /> Order
+                    <Plus className="w-4 h-4" /> {!settings?.is_store_open ? 'Closed' : 'Order'}
                   </button>
                 </div>
               </div>

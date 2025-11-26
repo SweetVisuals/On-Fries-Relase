@@ -10,13 +10,84 @@ const MOCK_STOCK: StockItem[] = [
 ];
 
 const MENU_STOCK_REQUIREMENTS: Record<string, string[]> = {
-  'Steak & Fries': ['Steaks', 'Fries'],
+  'Steak & Fries': ['Steaks'],
+  'Deluxe Steak & Fries': ['Steaks'],
   'Steak Only': ['Steaks'],
-  'Signature Fries': ['Fries'],
+  'Short Rib': ['Short Rib'],
+  'Lamb': ['Lamb'],
   'Coca Cola': ['Coca Cola'],
   'Coke Zero': ['Coke Zero'],
   'Tango Mango': ['Tango Mango'],
-  'Sprite': ['Sprite']
+  'Sprite': ['Sprite'],
+  'Fanta': ['Fanta'],
+  'Dr Pepper': ['Dr Pepper'],
+  '7UP': ['7UP'],
+  'Pepsi': ['Pepsi'],
+  'Pepsi Max': ['Pepsi Max'],
+  'Orange Juice': ['Orange Juice'],
+  'Apple Juice': ['Apple Juice'],
+  'Milk': ['Milk'],
+  'Water': ['Water']
+};
+
+// Stock deduction amounts (multipliers)
+const STOCK_DEDUCTIONS: Record<string, number> = {
+  'Steak & Fries': 1,
+  'Deluxe Steak & Fries': 2,
+  'Steak Only': 1,
+  'Short Rib': 2,
+  'Lamb': 2,
+  // Drinks are 1 each, handled separately
+};
+
+// Items not to deduct automatically
+const NO_DEDUCT_ITEMS = ['Fries', 'Chip Seasoning', 'Green Sauce', 'Red Sauce', 'Mayo', 'Ketchup'];
+
+// Function to calculate stock deductions from order items
+const calculateStockDeductions = (orderItems: OrderItem[]): Record<string, number> => {
+  const deductions: Record<string, number> = {};
+
+  orderItems.forEach(item => {
+    const itemName = item.name.toLowerCase();
+
+    // Handle main items
+    if (itemName === 'deluxe steak & fries') {
+      deductions['Steaks'] = (deductions['Steaks'] || 0) + 2 * item.quantity;
+    } else if (itemName.includes('steak') && itemName.includes('fries')) {
+      deductions['Steaks'] = (deductions['Steaks'] || 0) + 1 * item.quantity;
+    } else if (itemName.includes('steak only') || itemName === 'steak') {
+      deductions['Steaks'] = (deductions['Steaks'] || 0) + 1 * item.quantity;
+    } else if (itemName.includes('short rib')) {
+      deductions['Short Rib'] = (deductions['Short Rib'] || 0) + 2 * item.quantity;
+    } else if (itemName.includes('lamb')) {
+      deductions['Lamb'] = (deductions['Lamb'] || 0) + 2 * item.quantity;
+    } else if (itemName.includes('drink') || MENU_STOCK_REQUIREMENTS[item.name]) {
+      // For drinks and other items in requirements
+      const stockItems = MENU_STOCK_REQUIREMENTS[item.name];
+      if (stockItems) {
+        stockItems.forEach(stockName => {
+          if (!NO_DEDUCT_ITEMS.includes(stockName)) {
+            deductions[stockName] = (deductions[stockName] || 0) + 1 * item.quantity;
+          }
+        });
+      }
+    }
+
+    // Handle addons
+    if (item.addons && item.addons.length > 0) {
+      item.addons.forEach(addon => {
+        if (addon === 'Lamb') {
+          deductions['Lamb'] = (deductions['Lamb'] || 0) + 2 * item.quantity;
+        } else if (addon === 'Short Rib') {
+          deductions['Short Rib'] = (deductions['Short Rib'] || 0) + 2 * item.quantity;
+        } else if (addon.includes('Steak')) {
+          deductions['Steaks'] = (deductions['Steaks'] || 0) + 1 * item.quantity;
+        }
+      });
+    }
+  });
+
+  return deductions;
 };
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -104,8 +175,20 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           return;
         }
 
+        // Map DB data to StockItem format
+        const mappedData = (data || []).map(d => ({
+          id: d.id,
+          name: d.name,
+          category: d.category,
+          quantity: d.quantity,
+          location: d.location,
+          supplier: d.supplier,
+          notes: d.notes,
+          lowStockThreshold: d.low_stock_threshold || 5
+        }));
+
         // Sort: first by location (Trailer first), then by category, then meats first, then alphabetical
-        const sortedData = (data || []).sort((a, b) => {
+        const sortedData = mappedData.sort((a, b) => {
           // Trailer before Lockup
           if (a.location !== b.location) {
             return a.location === 'Trailer' ? -1 : 1;
@@ -142,10 +225,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const { data, error } = await supabase
+        let query = supabase
           .from('orders')
           .select('*')
           .order('created_at', { ascending: true });
+
+        // If user is logged in and not admin, filter by user_id
+        if (user && !isAdmin) {
+          query = query.eq('user_id', user.id);
+        }
+
+        const { data, error } = await query;
 
         if (error) {
           console.error('Error fetching orders:', error);
@@ -163,7 +253,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           estimatedTime: o.estimated_time,
           completedAt: o.completed_at,
           paymentId: o.payment_id,
-          displayId: o.display_id
+          displayId: o.display_id,
+          userId: o.user_id
         }));
 
         setOrders(mappedOrders);
@@ -265,7 +356,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       created_at: new Date().toISOString(),
       estimated_time: order.estimatedTime || new Date(Date.now() + averageOrderTime * 60000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       completed_at: order.completedAt,
-      payment_id: order.paymentId
+      payment_id: order.paymentId,
+      user_id: user?.id
     };
 
     try {
@@ -293,6 +385,21 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         paymentId: data.payment_id,
         displayId: data.display_id
       };
+
+      // Update stock automatically for trailer inventory
+      const deductions = calculateStockDeductions(order.items);
+      for (const [stockName, amount] of Object.entries(deductions)) {
+        try {
+          await supabase
+            .from('stock_items')
+            .update({ quantity: supabase.sql`quantity - ${amount}` })
+            .eq('name', stockName)
+            .eq('location', 'Trailer');
+        } catch (stockError) {
+          console.error('Error updating stock for', stockName, stockError);
+          // Continue with other updates even if one fails
+        }
+      }
 
       setOrders(prev => [createdOrder, ...prev]);
       return createdOrder;

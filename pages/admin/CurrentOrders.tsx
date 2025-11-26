@@ -33,18 +33,18 @@ export const CurrentOrdersPage = () => {
       const name = item.name.toLowerCase();
 
       // Count main items
-      if (name.includes('steak')) grillStats.steaks += item.quantity;
-      else if (name.includes('lamb')) grillStats.lamb += item.quantity;
-      else if (name.includes('rib')) grillStats.shortRib += item.quantity;
+      if (name.includes('deluxe steak')) grillStats.steaks += 2 * item.quantity;
+      else if (name.includes('steak')) grillStats.steaks += item.quantity;
+      else if (name.includes('lamb')) grillStats.lamb += 2 * item.quantity;
+      else if (name.includes('rib')) grillStats.shortRib += 2 * item.quantity;
       else if (name.includes('cone')) grillStats.kidsCone += item.quantity;
 
       // Count addons
       if (item.addons && item.addons.length > 0) {
         item.addons.forEach(addon => {
-          const addonName = addon.toLowerCase();
-          if (addonName.includes('steak')) grillStats.steaks += item.quantity;
-          else if (addonName.includes('lamb')) grillStats.lamb += item.quantity;
-          else if (addonName.includes('rib')) grillStats.shortRib += item.quantity;
+          if (addon.startsWith('Lamb')) grillStats.lamb += 2 * item.quantity;
+          else if (addon.startsWith('Short Rib')) grillStats.shortRib += 2 * item.quantity;
+          else if (addon.startsWith('Steak')) grillStats.steaks += item.quantity;
         });
       }
     });

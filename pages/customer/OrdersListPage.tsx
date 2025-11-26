@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { CustomerLayout } from '../../components/CustomerLayout';
 import { useStore } from '../../context/StoreContext';
 import { Clock, CheckCircle2, XCircle, ChefHat, Timer } from 'lucide-react';
 
 export const OrdersListPage = () => {
-   const { orders, averageOrderTime } = useStore();
+   const { orders, averageOrderTime, user } = useStore();
 
    // Filter orders for the current view (simulating "My Orders" - in a real app would filter by user ID)
    // For this demo, we'll show all orders that are not delivered/cancelled as "Active"
@@ -59,20 +60,40 @@ export const OrdersListPage = () => {
       return estimatedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
    };
 
-   return (
-      <CustomerLayout>
-         <div className="space-y-6 animate-fade-in max-w-3xl mx-auto">
-            <div className="text-center py-6">
-               <h1 className="text-3xl font-bold text-white font-heading uppercase">My Orders</h1>
-               <p className="text-zinc-400">Track your current and past orders</p>
-            </div>
+   if (!user) {
+     return (
+        <CustomerLayout>
+           <div className="space-y-6 animate-fade-in max-w-3xl mx-auto">
+              <div className="text-center py-6">
+                 <h1 className="text-3xl font-bold text-white font-heading uppercase">My Orders</h1>
+                 <p className="text-zinc-400">Track your current and past orders</p>
+              </div>
 
-            <div className="space-y-4">
-               {sortedOrders.length === 0 ? (
-                  <div className="text-center py-12 bg-zinc-900 border border-zinc-800 rounded-2xl">
-                     <p className="text-zinc-500">No orders found.</p>
-                  </div>
-               ) : (
+              <div className="text-center py-12 bg-zinc-900 border border-zinc-800 rounded-2xl">
+                 <p className="text-zinc-500 mb-4">Please log in to view your orders.</p>
+                 <Link to="/profile" className="inline-block px-6 py-2 bg-brand-yellow text-black font-bold rounded-lg hover:bg-yellow-400 transition-colors">
+                    Log In
+                 </Link>
+              </div>
+           </div>
+        </CustomerLayout>
+     );
+  }
+
+  return (
+     <CustomerLayout>
+        <div className="space-y-6 animate-fade-in max-w-3xl mx-auto">
+           <div className="text-center py-6">
+              <h1 className="text-3xl font-bold text-white font-heading uppercase">My Orders</h1>
+              <p className="text-zinc-400">Track your current and past orders</p>
+           </div>
+
+           <div className="space-y-4">
+              {sortedOrders.length === 0 ? (
+                 <div className="text-center py-12 bg-zinc-900 border border-zinc-800 rounded-2xl">
+                    <p className="text-zinc-500">No orders found.</p>
+                 </div>
+              ) : (
                   sortedOrders.map(order => {
                      const statusInfo = getStatusDisplay(order.status);
                      const queuePos = getQueuePosition(order.id);
