@@ -489,7 +489,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
   );
 
   return (
-    <div className="fixed inset-0 bg-zinc-950 z-50 md:bg-black/80 md:flex md:items-center md:justify-center md:backdrop-blur-sm md:p-4 animate-fade-in">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 md:flex md:items-center md:justify-center md:p-4 animate-fade-in">
       <div className="w-full h-full bg-zinc-950 md:max-w-5xl md:border md:border-zinc-800 md:rounded-3xl flex flex-col md:flex-row md:shadow-2xl overflow-hidden md:max-h-[90vh]">
         {/* Mobile View */}
         <div className="md:hidden h-full flex flex-col">
