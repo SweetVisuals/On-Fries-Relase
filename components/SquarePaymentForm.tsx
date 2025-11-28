@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Loader2, CreditCard, Lock, TestTube } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 declare global {
   interface Window {
@@ -208,9 +209,26 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
         paymentResponse = { payment: simulatedPayment, errors: null };
 
       } else {
-        // Live mode: attempt real payment processing
-        // This would normally require a backend API call
-        throw new Error('Live payment processing requires a backend server. Please use test mode.');
+        // Live mode: call Supabase Edge Function for payment processing
+        const { data, error } = await supabase.functions.invoke('process-payment', {
+          body: {
+            sourceId: token,
+            amount: amount,
+            currency: 'GBP',
+            idempotencyKey: `payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            isSandbox: false
+          }
+        });
+
+        if (error) {
+          throw new Error(`Payment failed: ${error.message}`);
+        }
+
+        if (!data.success) {
+          throw new Error(data.error || 'Payment processing failed');
+        }
+
+        paymentResponse = { payment: data.payment, errors: null };
       }
 
       // Payment successful
