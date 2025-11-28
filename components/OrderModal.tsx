@@ -12,7 +12,6 @@ interface OrderModalProps {
 
 const SECTIONS = [
   { id: 'Main', label: 'Mains' },
-  { id: 'Sides', label: 'Extras' },
   { id: 'Kids', label: 'Kids' },
   { id: 'Drinks', label: 'Drinks' },
 ];
