@@ -34,6 +34,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
   const [customizingItem, setCustomizingItem] = useState<MenuItem | null>(null);
   const [selectedAddons, setSelectedAddons] = useState<{ [key: string]: number }>({});
   const [currentStep, setCurrentStep] = useState(1);
+  const [showAddedNotification, setShowAddedNotification] = useState(false);
   const [isOrderDetailsCollapsed, setIsOrderDetailsCollapsed] = useState(true);
 
   const prevIsOpen = usePrevious(isOpen);
@@ -153,6 +154,8 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
         quantity: 1,
         addons: addons
       }];
+    setShowAddedNotification(true);
+    setTimeout(() => setShowAddedNotification(false), 2000);
     });
   };
 
@@ -485,6 +488,53 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
           </button>
         </div>
       </div>
+  return (
+    <>
+      <div className="fixed inset-0 bg-zinc-950 z-50 md:bg-black/80 md:flex md:items-center md:justify-center md:backdrop-blur-sm md:p-4 animate-fade-in">
+        <div className="w-full h-full bg-zinc-950 md:max-w-5xl md:border md:border-zinc-800 md:rounded-3xl flex flex-col md:flex-row md:shadow-2xl overflow-hidden md:max-h-[90vh]">
+          {/* Mobile View */}
+          <div className="md:hidden h-full flex flex-col">
+            {currentStep === 1 && !orderToEdit && (
+              <div className="flex flex-col h-full justify-between p-6 bg-zinc-950">
+                <div>
+                  <div className="flex justify-between items-center mb-8">
+                    <h2 className="text-2xl font-bold text-white font-heading uppercase">New Order</h2>
+                    <button onClick={onClose} className="p-2 hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-white transition-colors"><X className="w-5 h-5" /></button>
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="customerName" className="text-sm font-bold text-zinc-400">Customer Name / Table No.</label>
+                    <input id="customerName" type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Enter name or table number" className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-brand-yellow focus:outline-none font-medium text-lg" autoFocus />
+                  </div>
+                </div>
+                <button onClick={() => setCurrentStep(2)} disabled={!customerName} className="w-full py-4 bg-brand-yellow text-black font-bold text-lg rounded-xl hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-yellow-900/20 flex justify-center items-center gap-2">
+                  Next <ArrowRight className="w-5 h-5" />
+                </button>
+              </div>
+            )}
+            {(currentStep === 2 || (orderToEdit && currentStep === 2)) && (
+              <div className="flex flex-col h-full">
+                {orderToEdit && <CollapsibleOrderDetails />}
+                <MenuSelection />
+              </div>
+            )}
+            {(currentStep === 3 || (orderToEdit && currentStep === 3)) && <CartDetails />}
+          </div>
+
+          {/* Desktop View */}
+          <div className="hidden md:flex flex-1 h-full">
+            <div className="flex-1 flex flex-col border-r border-zinc-800 h-full overflow-hidden relative"><MenuSelection /></div>
+            <div className="w-full md:w-[380px] flex flex-col bg-zinc-900 h-full"><CartDetails /></div>
+          </div>
+        </div>
+      </div>
+      {showAddedNotification && (
+        <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-full shadow-lg animate-fade-in flex items-center gap-2 z-60 md:hidden">
+          <Check className="w-5 h-5" />
+          Added to order
+        </div>
+      )}
+    </>
+  );
     </div>
   );
 
