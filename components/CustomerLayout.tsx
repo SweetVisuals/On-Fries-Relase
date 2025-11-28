@@ -32,7 +32,7 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
         <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-2">
              <div className="w-8 h-8 bg-zinc-800 rounded-full border border-brand-yellow overflow-hidden">
-               <img src="images/OnFries-Logo.png" alt="Logo" />
+               <img src="/images/OnFries-Logo.png" alt="Logo" />
              </div>
              <span className="font-bold text-xl tracking-tight text-brand-yellow">On Fries</span>
           </div>

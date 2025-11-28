@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X, Plus, Minus, Check, Trash2, ChevronLeft } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Plus, Minus, Check, Trash2, ChevronLeft, ArrowRight, ShoppingCart, ChevronDown, ChevronUp } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { OrderItem, Order, MenuItem } from '../types';
 import { ITEM_ADDONS, ADDON_PRICES } from '../constants';
@@ -17,66 +17,113 @@ const SECTIONS = [
   { id: 'Drinks', label: 'Drinks' },
 ];
 
+// Custom hook to get the previous value of a prop or state
+function usePrevious<T>(value: T): T | undefined {
+  const ref = useRef<T>();
+  useEffect(() => {
+    ref.current = value;
+  });
+  return ref.current;
+}
+
 export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderToEdit }) => {
   const { menu, addOrder, editOrder, deleteOrder } = useStore();
   const [cart, setCart] = useState<OrderItem[]>([]);
   const [customerName, setCustomerName] = useState('');
   const [selectedSection, setSelectedSection] = useState<string>('Main');
-
-  // Customization State
   const [customizingItem, setCustomizingItem] = useState<MenuItem | null>(null);
-  const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
+  const [selectedAddons, setSelectedAddons] = useState<{ [key: string]: number }>({});
+  const [currentStep, setCurrentStep] = useState(1);
+  const [isOrderDetailsCollapsed, setIsOrderDetailsCollapsed] = useState(true);
+
+  const prevIsOpen = usePrevious(isOpen);
+  const prevOrderToEditId = usePrevious(orderToEdit?.id);
 
   useEffect(() => {
-    if (isOpen) {
-      if (orderToEdit) {
-        setCart(orderToEdit.items);
-        setCustomerName(orderToEdit.customerName);
-      } else {
-        setCart([]);
-        setCustomerName('');
-      }
+    // When modal opens for a new order (no orderToEdit, and prevIsOpen was false)
+    if (isOpen && !orderToEdit && !prevIsOpen) {
+      setCart([]);
+      setCustomerName('');
+      setCurrentStep(1);
+      setIsOrderDetailsCollapsed(true);
       setSelectedSection('Main');
       setCustomizingItem(null);
-      setSelectedAddons([]);
+      setSelectedAddons({});
+    } 
+    // When a different order is selected for edit (isOpen is true, and orderToEdit.id changes)
+    else if (isOpen && orderToEdit && prevOrderToEditId !== orderToEdit.id) {
+      setCart(orderToEdit.items);
+      setCustomerName(orderToEdit.customerName);
+      setCurrentStep(2); // Start at menu for edits
+      setIsOrderDetailsCollapsed(true);
+      setSelectedSection('Main');
+      setCustomizingItem(null); // Reset customization when switching orders
+      setSelectedAddons({}); // Reset addons when switching orders
     }
-  }, [isOpen, orderToEdit]);
+    // When modal closes
+    else if (!isOpen && prevIsOpen) {
+      // Reset all states when modal is closed
+      setCart([]);
+      setCustomerName('');
+      setSelectedSection('Main');
+      setCustomizingItem(null);
+      setSelectedAddons({});
+      setCurrentStep(1);
+      setIsOrderDetailsCollapsed(true);
+    }
+  }, [isOpen, orderToEdit, prevIsOpen, prevOrderToEditId]);
 
   if (!isOpen) return null;
 
   const handleItemClick = (item: MenuItem) => {
-    // Check if item has available addons
     const hasAddons = ITEM_ADDONS[item.name];
-
     if (hasAddons) {
       setCustomizingItem(item);
-      setSelectedAddons([]);
+      setSelectedAddons({});
     } else {
       addToCart(item, []);
     }
   };
 
+  const incrementAddon = (addon: string) => {
+    setSelectedAddons(prev => ({ ...prev, [addon]: (prev[addon] || 0) + 1 }));
+  };
+
+  const decrementAddon = (addon: string) => {
+    setSelectedAddons(prev => {
+      const newAddons = { ...prev };
+      if (newAddons[addon] > 1) {
+        newAddons[addon]--;
+      } else {
+        delete newAddons[addon];
+      }
+      return newAddons;
+    });
+  };
+
   const toggleAddon = (addon: string) => {
     setSelectedAddons(prev => {
-      if (prev.includes(addon)) {
-        return prev.filter(a => a !== addon);
+      const newAddons = { ...prev };
+      if (newAddons[addon]) {
+        delete newAddons[addon];
       } else {
-        return [...prev, addon];
+        newAddons[addon] = 1;
       }
+      return newAddons;
     });
   };
 
   const confirmCustomization = () => {
     if (customizingItem) {
-      addToCart(customizingItem, selectedAddons);
-      setCustomizingItem(null);
-      setSelectedAddons([]);
+      const addonsArray = Object.entries(selectedAddons).flatMap(([addon, quantity]) => Array(quantity).fill(addon)) as string[];
+      addToCart(customizingItem, addonsArray);
+      // Removed setCustomizingItem(null) to stay on the customization screen
+      setSelectedAddons({}); // Clear selected addons for the next customization
     }
   };
 
   const addToCart = (item: MenuItem, addons: string[]) => {
     setCart(prev => {
-      // Check if exact item with same addons exists
       const existingIndex = prev.findIndex(i =>
         i.menuItemId === item.id &&
         JSON.stringify(i.addons?.sort()) === JSON.stringify(addons.sort())
@@ -99,23 +146,17 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
   };
 
   const updateQuantity = (index: number, delta: number) => {
-    setCart(prev => prev.map((item, i) => {
-      if (i === index) {
-        return { ...item, quantity: Math.max(0, item.quantity + delta) };
-      }
-      return item;
-    }).filter(item => item.quantity > 0));
+    setCart(prev => prev.map((item, i) => i === index ? { ...item, quantity: Math.max(0, item.quantity + delta) } : item)
+      .filter(item => item.quantity > 0));
   };
 
   const calculateItemTotal = (item: OrderItem) => {
     let itemPrice = item.price;
     let freeSauceAvailable = item.name === 'Kids Meal';
-
     if (item.addons) {
       item.addons.forEach(addon => {
         let price = ADDON_PRICES[addon] || 0;
         const isSauce = ['Green Sauce', 'Red Sauce'].includes(addon);
-
         if (freeSauceAvailable && isSauce) {
           price = 0;
           freeSauceAvailable = false;
@@ -127,228 +168,223 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
   };
 
   const total = cart.reduce((sum, item) => sum + calculateItemTotal(item), 0);
+  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const handleSubmit = () => {
     if (!customerName || cart.length === 0) return;
 
-    if (orderToEdit) {
-      const updatedOrder: Order = {
-        ...orderToEdit,
-        customerName,
-        items: cart,
-        total: total,
-      };
-      editOrder(updatedOrder);
-    } else {
-      const newOrder: Order = {
-        id: '', // Will be generated by DB/Context
-        customerName,
-        status: 'cooking',
-        items: cart,
-        total: total,
-        createdAt: new Date().toISOString(),
-        estimatedTime: new Date(Date.now() + 15 * 60000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-      addOrder(newOrder);
-    }
+    const orderData = {
+      customerName,
+      items: cart,
+      total,
+    };
 
-    setCart([]);
-    setCustomerName('');
+    if (orderToEdit) {
+      editOrder({ ...orderToEdit, ...orderData });
+    } else {
+      addOrder({
+        id: '',
+        status: 'cooking',
+        createdAt: new Date().toISOString(),
+        estimatedTime: new Date(Date.now() + 15 * 60000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        ...orderData
+      });
+    }
     onClose();
   };
 
   const handleDelete = () => {
-    if (orderToEdit) {
-      if (confirm('Are you sure you want to delete this order?')) {
-        deleteOrder(orderToEdit.id);
-        onClose();
-      }
+    if (orderToEdit && confirm('Are you sure you want to delete this order?')) {
+      deleteOrder(orderToEdit.id);
+      onClose();
     }
-  }
+  };
 
   const filteredMenu = menu.filter(m => m.category === selectedSection);
 
-  return (
-    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center backdrop-blur-sm p-4">
-      <div className="w-full max-w-5xl bg-zinc-950 border border-zinc-800 rounded-3xl flex flex-col md:flex-row shadow-2xl overflow-hidden max-h-[90vh]">
-
-        {/* Left: Menu Selection or Customization */}
-        <div className="flex-1 flex flex-col border-r border-zinc-800 h-full overflow-hidden relative">
-          {customizingItem ? (
-            <div className="flex flex-col h-full animate-fade-in">
-              <div className="p-6 border-b border-zinc-800 bg-zinc-900/50 flex items-center gap-4">
-                <button
-                  onClick={() => setCustomizingItem(null)}
-                  className="p-2 hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-white transition-colors"
-                >
-                  <ChevronLeft className="w-6 h-6" />
-                </button>
-                <div>
-                  <h2 className="text-2xl font-bold text-white font-heading uppercase">Customize {customizingItem.name === 'Deluxe Steak & Fries' ? 'Deluxe Steak' : customizingItem.name}</h2>
-                  <p className="text-zinc-400 text-sm">Select extras and sauces</p>
+  const MenuSelection = () => (
+    <div className="flex flex-col h-full">
+      {customizingItem ? (
+        <div key={customizingItem.id} className="flex flex-col h-full animate-fade-in">
+          <div className="p-6 border-b border-zinc-800 bg-zinc-900/50 flex items-center gap-4">
+            <button onClick={() => setCustomizingItem(null)} className="p-2 hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-white transition-colors">
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            <div>
+              <h2 className="text-2xl font-bold text-white font-heading uppercase">Customize {customizingItem.name === 'Deluxe Steak & Fries' ? 'Deluxe Steak' : customizingItem.name}</h2>
+              <p className="text-zinc-400 text-sm">Select extras and sauces</p>
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto p-6 bg-zinc-950 space-y-8">
+            {ITEM_ADDONS[customizingItem.name]?.extras?.length > 0 && (
+              <div>
+                <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4">Extras</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {ITEM_ADDONS[customizingItem.name].extras.map(addon => {
+                    const count = selectedAddons[addon] || 0;
+                    const isMainItem = customizingItem.category === 'Main';
+                    if (isMainItem) {
+                      return (
+                        <div key={addon} className={`p-4 rounded-xl border text-left transition-all flex justify-between items-center ${count > 0 ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400'}`}>
+                          <div>
+                            <span className="font-medium">{addon}</span>
+                          </div>
+                          <div className="flex items-center gap-2 bg-zinc-800/50 rounded-full p-1 border border-zinc-700/50">
+                            <button onClick={() => decrementAddon(addon)} className="w-8 h-8 flex items-center justify-center hover:bg-zinc-700 rounded-full text-zinc-400 hover:text-white transition-colors"><Minus className="w-4 h-4" /></button>
+                            <span className="text-base font-bold w-5 text-center text-white">{count}</span>
+                            <button onClick={() => incrementAddon(addon)} className="w-8 h-8 flex items-center justify-center hover:bg-zinc-700 rounded-full text-zinc-400 hover:text-white transition-colors"><Plus className="w-4 h-4" /></button>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <button key={addon} onClick={() => toggleAddon(addon)} className={`p-4 rounded-xl border text-left transition-all flex justify-between items-center ${selectedAddons[addon] ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'}`}>
+                        <span className="font-medium">{addon}</span>
+                        <span className="text-sm font-bold text-brand-yellow">+£{ADDON_PRICES[addon]?.toFixed(2)}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-
-              <div className="flex-1 overflow-y-auto p-6 bg-zinc-950 space-y-8">
-                {ITEM_ADDONS[customizingItem.name]?.extras && ITEM_ADDONS[customizingItem.name].extras.length > 0 && (
+            )}
+            {ITEM_ADDONS[customizingItem.name]?.sauces?.length > 0 && (
+              <div>
+                <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4">Sauces</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {ITEM_ADDONS[customizingItem.name].sauces.map(sauce => {
+                    const count = selectedAddons[sauce] || 0;
+                    const isMainItem = customizingItem.category === 'Main';
+                    const isFree = customizingItem.name === 'Kids Meal' && !Object.keys(selectedAddons).some(a => ['Green Sauce', 'Red Sauce'].includes(a) && a !== sauce);
+                    if (isMainItem) {
+                      return (
+                        <div key={sauce} className={`p-4 rounded-xl border text-left transition-all flex justify-between items-center ${count > 0 ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400'}`}>
+                          <div>
+                            <span className="font-medium">{sauce}</span>
+                          </div>
+                          <div className="flex items-center gap-2 bg-zinc-800/50 rounded-full p-1 border border-zinc-700/50">
+                            <button onClick={() => decrementAddon(sauce)} className="w-8 h-8 flex items-center justify-center hover:bg-zinc-700 rounded-full text-zinc-400 hover:text-white transition-colors"><Minus className="w-4 h-4" /></button>
+                            <span className="text-base font-bold w-5 text-center text-white">{count}</span>
+                            <button onClick={() => incrementAddon(sauce)} className="w-8 h-8 flex items-center justify-center hover:bg-zinc-700 rounded-full text-zinc-400 hover:text-white transition-colors"><Plus className="w-4 h-4" /></button>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <button key={sauce} onClick={() => toggleAddon(sauce)} className={`p-4 rounded-xl border text-left transition-all flex justify-between items-center ${selectedAddons[sauce] ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'}`}>
+                        <span className="font-medium">{sauce}</span>
+                        {ADDON_PRICES[sauce] && !isFree ? <span className="text-sm font-bold text-brand-yellow">+£{ADDON_PRICES[sauce]?.toFixed(2)}</span> : <span className="text-xs font-bold text-zinc-500 uppercase">Free</span>}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+             {ITEM_ADDONS[customizingItem.name]?.drinks?.length > 0 && (
                   <div>
-                    <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4">Extras</h3>
+                    <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4">Drinks</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {ITEM_ADDONS[customizingItem.name].extras.map(addon => (
-                        <button
-                          key={addon}
-                          onClick={() => toggleAddon(addon)}
-                          className={`p-4 rounded-xl border text-left transition-all flex justify-between items-center ${selectedAddons.includes(addon)
-                            ? 'bg-brand-yellow/10 border-brand-yellow text-white'
-                            : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'
-                            }`}
-                        >
-                          <span className="font-medium">{addon}</span>
-                          <span className="text-sm font-bold text-brand-yellow">+£{ADDON_PRICES[addon]?.toFixed(2)}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {ITEM_ADDONS[customizingItem.name]?.sauces && ITEM_ADDONS[customizingItem.name].sauces.length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4">Sauces</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {ITEM_ADDONS[customizingItem.name].sauces.map(sauce => {
-                        const isFree = customizingItem.name === 'Kids Meal' && !selectedAddons.some(a => ['Green Sauce', 'Red Sauce'].includes(a) && a !== sauce);
+                      {ITEM_ADDONS[customizingItem.name].drinks.map(drink => {
+                        const count = selectedAddons[drink] || 0;
+                        const isMainItem = customizingItem.category === 'Main';
+                        if (isMainItem) {
+                          return (
+                            <div key={drink} className={`p-4 rounded-xl border text-left transition-all flex justify-between items-center ${count > 0 ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400'}`}>
+                              <div>
+                                <span className="font-medium">{drink}</span>
+                              </div>
+                              <div className="flex items-center gap-2 bg-zinc-800/50 rounded-full p-1 border border-zinc-700/50">
+                                <button onClick={() => decrementAddon(drink)} className="w-8 h-8 flex items-center justify-center hover:bg-zinc-700 rounded-full text-zinc-400 hover:text-white transition-colors"><Minus className="w-4 h-4" /></button>
+                                <span className="text-base font-bold w-5 text-center text-white">{count}</span>
+                                <button onClick={() => incrementAddon(drink)} className="w-8 h-8 flex items-center justify-center hover:bg-zinc-700 rounded-full text-zinc-400 hover:text-white transition-colors"><Plus className="w-4 h-4" /></button>
+                              </div>
+                            </div>
+                          );
+                        }
                         return (
                           <button
-                            key={sauce}
-                            onClick={() => toggleAddon(sauce)}
-                            className={`p-4 rounded-xl border text-left transition-all flex justify-between items-center ${selectedAddons.includes(sauce)
+                            key={drink}
+                            onClick={() => toggleAddon(drink)}
+                            className={`p-4 rounded-xl border text-left transition-all flex justify-between items-center ${selectedAddons[drink]
                               ? 'bg-brand-yellow/10 border-brand-yellow text-white'
                               : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'
                               }`}
                           >
-                            <span className="font-medium">{sauce}</span>
-                            {ADDON_PRICES[sauce] && !isFree ? (
-                              <span className="text-sm font-bold text-brand-yellow">+£{ADDON_PRICES[sauce]?.toFixed(2)}</span>
-                            ) : (
-                              <span className="text-xs font-bold text-zinc-500 uppercase">Free</span>
-                            )}
+                            <span className="font-medium">{drink}</span>
+                            <span className="text-sm font-bold text-brand-yellow">+£{ADDON_PRICES[drink]?.toFixed(2)}</span>
                           </button>
-                        )
+                        );
                       })}
                     </div>
                   </div>
                 )}
-
-                {ITEM_ADDONS[customizingItem.name]?.drinks && ITEM_ADDONS[customizingItem.name].drinks.length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4">Drinks</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {ITEM_ADDONS[customizingItem.name].drinks.map(drink => (
-                        <button
-                          key={drink}
-                          onClick={() => toggleAddon(drink)}
-                          className={`p-4 rounded-xl border text-left transition-all flex justify-between items-center ${selectedAddons.includes(drink)
-                            ? 'bg-brand-yellow/10 border-brand-yellow text-white'
-                            : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'
-                            }`}
-                        >
-                          <span className="font-medium">{drink}</span>
-                          <span className="text-sm font-bold text-brand-yellow">+£{ADDON_PRICES[drink]?.toFixed(2)}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="p-6 border-t border-zinc-800 bg-zinc-900">
-                <button
-                  onClick={confirmCustomization}
-                  className="w-full py-4 bg-brand-yellow text-black font-bold text-lg rounded-xl hover:bg-yellow-400 transition-all shadow-lg shadow-yellow-900/20"
-                >
-                  Add to Order
-                </button>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="p-6 border-b border-zinc-800 bg-zinc-900/50">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-2xl font-bold text-white font-heading uppercase">{orderToEdit ? 'Edit Order' : 'New Order'}</h2>
-                </div>
-
-                <div className="flex gap-2 overflow-x-auto no-scrollbar">
-                  {SECTIONS.map(section => (
-                    <button
-                      key={section.id}
-                      onClick={() => setSelectedSection(section.id)}
-                      className={`px-6 py-3 rounded-xl text-sm font-bold whitespace-nowrap transition-all flex-1 border-2 ${selectedSection === section.id
-                        ? 'bg-brand-yellow text-black border-brand-yellow'
-                        : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-700 hover:text-white'
-                        }`}
-                    >
-                      {section.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-6 bg-zinc-950">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredMenu.map(item => (
-                    <button
-                      key={item.id}
-                      onClick={() => handleItemClick(item)}
-                      className="flex flex-col items-start p-4 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-brand-yellow transition-all group text-left hover:shadow-lg hover:shadow-yellow-900/10"
-                    >
-                      <div className="flex justify-between w-full mb-2">
-                        <span className="font-bold text-white text-sm">{item.name === 'Deluxe Steak & Fries' ? 'Deluxe Steak' : item.name}</span>
-                        <span className="font-bold text-brand-yellow text-sm">£{item.price.toFixed(2)}</span>
-                      </div>
-                      {ITEM_ADDONS[item.name] && (
-                        <div className="mt-2 text-xs text-brand-yellow font-medium uppercase tracking-wide">
-                          Customizable
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                  {filteredMenu.length === 0 && (
-                    <div className="col-span-full text-center py-12 text-zinc-500">
-                      No items in this category.
-                    </div>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Right: Cart Details */}
-        <div className="w-full md:w-[380px] flex flex-col bg-zinc-900 h-full border-l border-zinc-800">
-          <div className="p-6 border-b border-zinc-800 flex justify-between items-center bg-zinc-800/50">
-            <h3 className="font-bold text-white text-lg font-heading uppercase">Order Details</h3>
-            <button onClick={onClose} className="p-2 hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-white transition-colors">
-              <X className="w-5 h-5" />
+          </div>
+          <div className="p-6 border-t border-zinc-800 bg-zinc-900">
+            <button onClick={confirmCustomization} className="w-full py-4 bg-brand-yellow text-black font-bold text-lg rounded-xl hover:bg-yellow-400 transition-all shadow-lg shadow-yellow-900/20">
+              Add to Order
             </button>
           </div>
-
-          <div className="p-4 border-b border-zinc-800 bg-zinc-900/50">
-            <input
-              type="text"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              placeholder="Customer Name / Table No."
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-brand-yellow focus:outline-none font-medium"
-              autoFocus
-            />
+        </div>
+      ) : (
+        <>
+          <div className="p-6 border-b border-zinc-800 bg-zinc-900/50">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-4">
+                <button onClick={() => setCurrentStep(1)} className="md:hidden p-2 hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-white transition-colors"><ChevronLeft className="w-6 h-6" /></button>
+                <h2 className="text-2xl font-bold text-white font-heading uppercase">{orderToEdit ? 'Edit Order' : 'New Order'}</h2>
+              </div>
+              <button onClick={onClose} className="p-2 hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-white transition-colors md:hidden">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex gap-2 overflow-x-auto no-scrollbar">
+              {SECTIONS.map(section => (
+                <button key={section.id} onClick={() => setSelectedSection(section.id)} className={`px-6 py-3 rounded-xl text-sm font-bold whitespace-nowrap transition-all flex-1 border-2 ${selectedSection === section.id ? 'bg-brand-yellow text-black border-brand-yellow' : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-700 hover:text-white'}`}>
+                  {section.label}
+                </button>
+              ))}
+            </div>
           </div>
+          <div className="flex-1 overflow-y-auto p-6 bg-zinc-950">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredMenu.map(item => (
+                <button key={item.id} onClick={() => handleItemClick(item)} className="flex flex-col items-start p-4 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-brand-yellow transition-all group text-left hover:shadow-lg hover:shadow-yellow-900/10">
+                  <div className="flex justify-between w-full mb-2">
+                    <span className="font-bold text-white text-sm">{item.name === 'Deluxe Steak & Fries' ? 'Deluxe Steak' : item.name}</span>
+                    <span className="font-bold text-brand-yellow text-sm">£{item.price.toFixed(2)}</span>
+                  </div>
+                  {ITEM_ADDONS[item.name] && <div className="mt-2 text-xs text-brand-yellow font-medium uppercase tracking-wide">Customizable</div>}
+                </button>
+              ))}
+              {filteredMenu.length === 0 && <div className="col-span-full text-center py-12 text-zinc-500">No items in this category.</div>}
+            </div>
+          </div>
+          <div className="md:hidden p-6 border-t border-zinc-800 bg-zinc-900">
+             <button onClick={() => setCurrentStep(3)} disabled={cart.length === 0} className="w-full py-4 bg-brand-yellow text-black font-bold text-lg rounded-xl hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-yellow-900/20 flex justify-center items-center gap-2">
+                View Order <ArrowRight className="w-5 h-5" />
+              </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
 
+  const CollapsibleOrderDetails = () => (
+    <div className="md:hidden bg-zinc-900 border-b border-zinc-800">
+      <div className="p-4 flex justify-between items-center" onClick={() => setIsOrderDetailsCollapsed(!isOrderDetailsCollapsed)}>
+        <h3 className="font-bold text-white text-lg font-heading uppercase">Order Details ({totalItems} items)</h3>
+        <button className="p-2 hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-white transition-colors">
+          {isOrderDetailsCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
+        </button>
+      </div>
+      {!isOrderDetailsCollapsed && (
+        <div className="p-4 pt-0">
+          <div className="p-4 border-b border-zinc-800 bg-zinc-900/50">
+            <input type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Customer Name / Table No." className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-brand-yellow focus:outline-none font-medium" autoFocus disabled={!!orderToEdit} />
+          </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-zinc-900">
             {cart.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-zinc-500 space-y-2 opacity-50">
-                <div className="p-4 bg-zinc-800 rounded-full">
-                  <Plus className="w-6 h-6" />
-                </div>
+                <div className="p-4 bg-zinc-800 rounded-full"><Plus className="w-6 h-6" /></div>
                 <p>Add items from menu</p>
               </div>
             ) : (
@@ -360,8 +396,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
                       <div className="mt-1 space-y-0.5">
                         {item.addons.map((addon, aIdx) => (
                           <div key={aIdx} className="text-xs text-zinc-500 flex items-center gap-1">
-                            <span className="w-1 h-1 rounded-full bg-zinc-700"></span>
-                            {addon}
+                            <span className="w-1 h-1 rounded-full bg-zinc-700"></span>{addon}
                           </div>
                         ))}
                       </div>
@@ -377,32 +412,107 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
               ))
             )}
           </div>
+        </div>
+      )}
+    </div>
+  );
 
-          <div className="p-6 bg-zinc-950 border-t border-zinc-800">
-            <div className="flex justify-between items-end mb-4">
-              <span className="text-zinc-400 font-medium">Total Amount</span>
-              <span className="text-3xl font-bold text-white">£{total.toFixed(2)}</span>
+  const CartDetails = () => (
+    <div className="flex flex-col h-full bg-zinc-900">
+      <div className="p-6 border-b border-zinc-800 flex justify-between items-center bg-zinc-800/50">
+        <div className="flex items-center gap-4">
+            <button onClick={() => setCurrentStep(2)} className="md:hidden p-2 hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-white transition-colors"><ChevronLeft className="w-6 h-6" /></button>
+            <h3 className="font-bold text-white text-lg font-heading uppercase">Order Details</h3>
+        </div>
+        <button onClick={onClose} className="p-2 hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-white transition-colors">
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+      <div className="p-4 border-b border-zinc-800 bg-zinc-900/50">
+        <input type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Customer Name / Table No." className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-brand-yellow focus:outline-none font-medium" autoFocus disabled={!!orderToEdit} />
+      </div>
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-zinc-900">
+        {cart.length === 0 ? (
+          <div className="h-full flex flex-col items-center justify-center text-zinc-500 space-y-2 opacity-50">
+            <div className="p-4 bg-zinc-800 rounded-full"><Plus className="w-6 h-6" /></div>
+            <p>Add items from menu</p>
+          </div>
+        ) : (
+          cart.map((item, idx) => (
+            <div key={idx} className="bg-zinc-950 p-3 rounded-xl border border-zinc-800 flex justify-between items-start group hover:border-zinc-700 transition-colors">
+              <div className="flex-1">
+                <div className="font-bold text-white text-sm">{item.name}</div>
+                {item.addons && item.addons.length > 0 && (
+                  <div className="mt-1 space-y-0.5">
+                    {item.addons.map((addon, aIdx) => (
+                      <div key={aIdx} className="text-xs text-zinc-500 flex items-center gap-1">
+                        <span className="w-1 h-1 rounded-full bg-zinc-700"></span>{addon}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="text-brand-yellow text-xs font-bold mt-1">£{calculateItemTotal(item).toFixed(2)}</div>
+              </div>
+              <div className="flex items-center gap-3 bg-zinc-900 rounded-lg p-1 border border-zinc-800 h-fit">
+                <button onClick={() => updateQuantity(idx, -1)} className="w-7 h-7 flex items-center justify-center hover:bg-zinc-800 rounded text-zinc-400 hover:text-white transition-colors"><Minus className="w-3 h-3" /></button>
+                <span className="text-sm font-bold w-5 text-center text-white">{item.quantity}</span>
+                <button onClick={() => updateQuantity(idx, 1)} className="w-7 h-7 flex items-center justify-center hover:bg-zinc-800 rounded text-zinc-400 hover:text-white transition-colors"><Plus className="w-3 h-3" /></button>
+              </div>
             </div>
-            <div className="flex gap-3">
-              {orderToEdit && (
-                <button
-                  onClick={handleDelete}
-                  className="p-4 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-xl hover:text-red-400 hover:bg-red-900/10 hover:border-red-900/30 transition-all"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
-              )}
-              <button
-                onClick={handleSubmit}
-                disabled={!customerName || cart.length === 0}
-                className="flex-1 py-4 bg-brand-yellow text-black font-bold text-lg rounded-xl hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-yellow-900/20 flex justify-center items-center gap-2 uppercase tracking-wide"
-              >
-                <Check className="w-5 h-5" /> {orderToEdit ? 'Update Order' : 'Confirm Order'}
+          ))
+        )}
+      </div>
+      <div className="p-6 bg-zinc-950 border-t border-zinc-800">
+        <div className="flex justify-between items-end mb-4">
+          <span className="text-zinc-400 font-medium">Total Amount</span>
+          <span className="text-3xl font-bold text-white">£{total.toFixed(2)}</span>
+        </div>
+        <div className="flex gap-3">
+          {orderToEdit && <button onClick={handleDelete} className="p-4 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-xl hover:text-red-400 hover:bg-red-900/10 hover:border-red-900/30 transition-all"><Trash2 className="w-5 h-5" /></button>}
+          <button onClick={handleSubmit} disabled={!customerName || cart.length === 0} className="flex-1 py-4 bg-brand-yellow text-black font-bold text-lg rounded-xl hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-yellow-900/20 flex justify-center items-center gap-2 uppercase tracking-wide">
+            <Check className="w-5 h-5" /> {orderToEdit ? 'Update Order' : 'Confirm Order'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="fixed inset-0 bg-zinc-950 z-50 md:bg-black/80 md:flex md:items-center md:justify-center md:backdrop-blur-sm md:p-4 animate-fade-in">
+      <div className="w-full h-full bg-zinc-950 md:max-w-5xl md:border md:border-zinc-800 md:rounded-3xl flex flex-col md:flex-row md:shadow-2xl overflow-hidden md:max-h-[90vh]">
+        {/* Mobile View */}
+        <div className="md:hidden h-full flex flex-col">
+          {currentStep === 1 && !orderToEdit && (
+            <div className="flex flex-col h-full justify-between p-6 bg-zinc-950">
+              <div>
+                <div className="flex justify-between items-center mb-8">
+                  <h2 className="text-2xl font-bold text-white font-heading uppercase">New Order</h2>
+                  <button onClick={onClose} className="p-2 hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-white transition-colors"><X className="w-5 h-5" /></button>
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="customerName" className="text-sm font-bold text-zinc-400">Customer Name / Table No.</label>
+                  <input id="customerName" type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Enter name or table number" className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-brand-yellow focus:outline-none font-medium text-lg" autoFocus />
+                </div>
+              </div>
+              <button onClick={() => setCurrentStep(2)} disabled={!customerName} className="w-full py-4 bg-brand-yellow text-black font-bold text-lg rounded-xl hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-yellow-900/20 flex justify-center items-center gap-2">
+                Next <ArrowRight className="w-5 h-5" />
               </button>
             </div>
-          </div>
+          )}
+          {(currentStep === 2 || (orderToEdit && currentStep === 2)) && (
+            <div className="flex flex-col h-full">
+              {orderToEdit && <CollapsibleOrderDetails />}
+              <MenuSelection />
+            </div>
+          )}
+          {(currentStep === 3 || (orderToEdit && currentStep === 3)) && <CartDetails />}
         </div>
 
+        {/* Desktop View */}
+        <div className="hidden md:flex flex-1 h-full">
+          <div className="flex-1 flex flex-col border-r border-zinc-800 h-full overflow-hidden relative"><MenuSelection /></div>
+          <div className="w-full md:w-[380px] flex flex-col bg-zinc-900 h-full"><CartDetails /></div>
+        </div>
       </div>
     </div>
   );

@@ -113,7 +113,7 @@ export const CurrentOrdersPage = () => {
 
   return (
     <AdminLayout>
-      <div className="flex flex-col space-y-8 max-w-7xl mx-auto animate-fade-in">
+      <div className="flex flex-col space-y-8 animate-fade-in">
 
         {/* Header */}
         <div className="flex justify-between items-center py-4 border-b border-zinc-800">

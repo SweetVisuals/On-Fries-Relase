@@ -14,7 +14,7 @@ export const CustomersPage = () => {
 
   return (
     <AdminLayout>
-      <div className="flex flex-col space-y-8 max-w-7xl mx-auto animate-fade-in">
+      <div className="flex flex-col space-y-8 animate-fade-in">
         
         <div className="flex justify-between items-center pb-6 border-b border-zinc-800">
            <div>
