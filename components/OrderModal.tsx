@@ -351,7 +351,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
             </div>
             <div className="flex gap-1 overflow-x-auto no-scrollbar">
               {SECTIONS.map(section => (
-                <button key={section.id} onClick={() => setSelectedSection(section.id)} className={`px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all flex-1 border-2 ${selectedSection === section.id ? 'bg-brand-yellow text-black border-brand-yellow' : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-700 hover:text-white'}`}>
+                <button key={section.id} onClick={() => setSelectedSection(section.id)} className={`px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all border-2 ${selectedSection === section.id ? 'bg-brand-yellow text-black border-brand-yellow' : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-700 hover:text-white'}`}>
                   {section.label}
                 </button>
               ))}
