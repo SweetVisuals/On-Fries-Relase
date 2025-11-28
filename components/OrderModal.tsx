@@ -527,7 +527,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
         </div>
       </div>
       {showAddedNotification && (
-        <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-full shadow-lg animate-fade-in flex items-center gap-2 z-60 md:hidden">
+        <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2 z-60 md:hidden">
           <Check className="w-5 h-5" />
           Added to order
         </div>
