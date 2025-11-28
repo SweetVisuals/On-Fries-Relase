@@ -128,7 +128,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
     if (customizingItem) {
       const addonsArray = Object.entries(selectedAddons).flatMap(([addon, quantity]) => Array(quantity).fill(addon)) as string[];
       addToCart(customizingItem, addonsArray);
-      // Removed setCustomizingItem(null) to stay on the customization screen
+      setCustomizingItem(null); // Go back to menu after adding customized item
       setSelectedAddons({}); // Clear selected addons for the next customization
     }
   };
