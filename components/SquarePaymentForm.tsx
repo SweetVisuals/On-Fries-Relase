@@ -45,12 +45,14 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [paymentMode, setPaymentMode] = useState<'test' | 'live'>('test');
 
-  // Hardcode sandbox configuration
+  // Environment-based Square configuration
   const SQUARE_CONFIG = {
-    applicationId: 'sandbox-sq0idb-oggrMwUwXBTTDHGC8sZHTQ',
-    locationId: 'L14KB0DPJ20SD',
-    environment: 'sandbox' as const,
-    scriptUrl: 'https://sandbox.web.squarecdn.com/v1/square.js'
+    applicationId: import.meta.env.VITE_SQUARE_APPLICATION_ID || 'sandbox-sq0idb-oggrMwUwXBTTDHGC8sZHTQ',
+    locationId: import.meta.env.VITE_SQUARE_LOCATION_ID || 'L14KB0DPJ20SD',
+    environment: (import.meta.env.VITE_SQUARE_ENVIRONMENT || 'sandbox') as 'sandbox' | 'production',
+    scriptUrl: import.meta.env.VITE_SQUARE_ENVIRONMENT === 'production'
+      ? 'https://web.squarecdn.com/v1/square.js'
+      : 'https://sandbox.web.squarecdn.com/v1/square.js'
   };
 
   useEffect(() => {
