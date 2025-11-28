@@ -129,7 +129,6 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
     if (customizingItem) {
       const addonsArray = Object.entries(selectedAddons).flatMap(([addon, quantity]) => Array(quantity).fill(addon)) as string[];
       addToCart(customizingItem, addonsArray);
-      setCustomizingItem(null); // Go back to menu after adding customized item
       setSelectedAddons({}); // Clear selected addons for the next customization
     }
   };
@@ -219,7 +218,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
   const MenuSelection = () => (
     <div className="flex flex-col h-full">
       {customizingItem ? (
-        <div key={customizingItem.id} className="flex flex-col h-full animate-fade-in">
+        <div key={customizingItem.id} className="flex flex-col h-full">
           <div className="p-6 border-b border-zinc-800 bg-zinc-900/50 flex items-center gap-4">
             <button onClick={() => setCustomizingItem(null)} className="p-2 hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-white transition-colors">
               <ChevronLeft className="w-6 h-6" />
