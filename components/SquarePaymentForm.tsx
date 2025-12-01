@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Loader2, CreditCard, Lock, TestTube } from 'lucide-react';
+import { Loader2, CreditCard, Lock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 declare global {
@@ -43,7 +43,6 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
     postalCode: ''
   });
   const [errors, setErrors] = useState<{[key: string]: string}>({});
-  const [paymentMode, setPaymentMode] = useState<'test' | 'live'>('live');
   const [squareFields, setSquareFields] = useState<any>(null);
 
   // Environment-based Square configuration - Force production for live payments
@@ -66,9 +65,33 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
     };
     document.body.appendChild(script);
 
+    // Add CSS for Square hosted fields
+    const style = document.createElement('style');
+    style.textContent = `
+      #card-container input {
+        color: white !important;
+      }
+      #card-container input::placeholder {
+        color: rgba(255, 255, 255, 0.6) !important;
+      }
+      #card-container .sq-input {
+        color: white !important;
+      }
+      #card-container .sq-input::placeholder {
+        color: rgba(255, 255, 255, 0.6) !important;
+      }
+      #card-container iframe {
+        color-scheme: dark;
+      }
+    `;
+    document.head.appendChild(style);
+
     return () => {
       if (script.parentNode) {
         document.body.removeChild(script);
+      }
+      if (style.parentNode) {
+        document.head.removeChild(style);
       }
     };
   }, []);
@@ -129,32 +152,21 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
     }
 
     setIsLoading(true);
-    setPaymentStatus(paymentMode === 'test' ? 'Processing test payment...' : 'Processing payment...');
+    setPaymentStatus('Processing payment...');
 
     try {
-      let token: string;
-
-      if (paymentMode === 'test') {
-        // Test mode: simulate tokenization
-        const tokenResult = await simulateTokenization();
-        if (tokenResult.errors) {
-          throw new Error('Card tokenization failed');
-        }
-        token = tokenResult.token || 'simulated_token_' + Date.now();
-      } else {
-        // Live mode: tokenize with Square hosted fields
-        if (!squareFields) {
-          throw new Error('Payment form not initialized');
-        }
-
-        const tokenResult = await squareFields.card.tokenize();
-        if (tokenResult.status === 'INVALID') {
-          throw new Error('Invalid card information. Please check your details and try again.');
-        } else if (tokenResult.status === 'FAILURE') {
-          throw new Error('Card tokenization failed. Please try again.');
-        }
-        token = tokenResult.token;
+      // Live mode: tokenize with Square hosted fields
+      if (!squareFields) {
+        throw new Error('Payment form not initialized');
       }
+
+      const tokenResult = await squareFields.card.tokenize();
+      if (tokenResult.status === 'INVALID') {
+        throw new Error('Invalid card information. Please check your details and try again.');
+      } else if (tokenResult.status === 'FAILURE') {
+        throw new Error('Card tokenization failed. Please try again.');
+      }
+      const token = tokenResult.token;
 
       // Call Supabase Edge Function for payment processing
       const { data, error } = await supabase.functions.invoke('process-payment', {
@@ -162,8 +174,7 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
           sourceId: token,
           amount: amount,
           currency: 'GBP',
-          idempotencyKey: `payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          isSandbox: paymentMode === 'test'
+          idempotencyKey: `payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
         }
       });
 
@@ -190,23 +201,6 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
     }
   };
 
-  // Simulate card tokenization for demo purposes
-  const simulateTokenization = (): Promise<{token?: string, errors?: any[]}> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Simulate validation
-        const cardNumber = cardForm.cardNumber.replace(/\s/g, '');
-
-        // Simulate card decline for certain numbers
-        if (cardNumber === '4000000000000002') {
-          resolve({ errors: [{ category: 'PAYMENT_METHOD_ERROR', code: 'CARD_DECLINED' }] });
-          return;
-        }
-
-        resolve({ token: `cnon:card-nonce-${Date.now()}` });
-      }, 1000);
-    });
-  };
 
   return (
     <div className="w-full max-w-md mx-auto">
@@ -214,41 +208,10 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
         <CreditCard className="w-5 h-5 text-brand-yellow" />
         <h3 className="text-lg font-semibold text-white">Payment Details</h3>
         <div className="flex items-center gap-2 ml-auto">
-          {paymentMode === 'test' && (
-            <div className="flex items-center gap-1 px-2 py-1 bg-blue-900/20 border border-blue-500/30 rounded text-xs text-blue-400">
-              <TestTube className="w-3 h-3" />
-              TEST
-            </div>
-          )}
           <Lock className="w-4 h-4 text-green-400" />
         </div>
       </div>
 
-      {/* Payment Mode Selector */}
-      <div className="flex gap-2 mb-4">
-        <button
-          type="button"
-          onClick={() => setPaymentMode('test')}
-          className={`flex-1 py-2 px-3 rounded-lg text-sm font-bold transition-colors ${
-            paymentMode === 'test'
-              ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-              : 'bg-zinc-800 text-zinc-400 border border-zinc-700 hover:bg-zinc-700'
-          }`}
-        >
-          Test Mode
-        </button>
-        <button
-          type="button"
-          onClick={() => setPaymentMode('live')}
-          className={`flex-1 py-2 px-3 rounded-lg text-sm font-bold transition-colors ${
-            paymentMode === 'live'
-              ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-              : 'bg-zinc-800 text-zinc-400 border border-zinc-700 hover:bg-zinc-700'
-          }`}
-        >
-          Live Mode
-        </button>
-      </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Card Details (Hosted by Square) */}
@@ -285,22 +248,6 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
           )}
         </button>
       </form>
-
-      {/* Card Information */}
-      {paymentMode === 'test' && (
-        <div className="mt-4 p-3 bg-blue-900/20 border border-blue-500/20 rounded-lg text-sm">
-          <p className="font-bold mb-2 text-blue-400">Test Cards (Demo Mode):</p>
-          <p className="text-blue-300">Success: 4111 1111 1111 1111</p>
-          <p className="text-blue-300">Decline: 4000 0000 0000 0002</p>
-        </div>
-      )}
-      {paymentMode === 'live' && (
-        <div className="mt-4 p-3 bg-red-900/20 border border-red-500/20 rounded-lg text-sm">
-          <p className="font-bold mb-2 text-red-400">⚠️ Live Mode Warning:</p>
-          <p className="text-red-300">Real money will be charged to your card.</p>
-          <p className="text-red-300">Use test mode for demonstration purposes.</p>
-        </div>
-      )}
     </div>
   );
 };

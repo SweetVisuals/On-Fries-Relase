@@ -14,7 +14,6 @@ interface PaymentRequest {
   amount: number
   currency: string
   idempotencyKey: string
-  isSandbox?: boolean
   type?: 'payment' | 'checkout'
 }
 
@@ -42,7 +41,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { sourceId, cardDetails, amount, currency, idempotencyKey, isSandbox = false, type = 'payment' }: PaymentRequest = await req.json()
+    const { sourceId, cardDetails, amount, currency, idempotencyKey, type = 'payment' }: PaymentRequest = await req.json()
 
     // Validate required fields
     if (type === 'payment' && !sourceId && !cardDetails) {
@@ -64,14 +63,9 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Get Square credentials based on environment
-    const accessToken = isSandbox
-      ? Deno.env.get('SQUARE_SANDBOX_ACCESS_TOKEN')
-      : Deno.env.get('SQUARE_PRODUCTION_ACCESS_TOKEN')
-
-    const locationId = isSandbox
-      ? Deno.env.get('SQUARE_SANDBOX_LOCATION_ID')
-      : Deno.env.get('SQUARE_PRODUCTION_LOCATION_ID')
+    // Get Square production credentials
+    const accessToken = Deno.env.get('SQUARE_PRODUCTION_ACCESS_TOKEN')
+    const locationId = Deno.env.get('SQUARE_PRODUCTION_LOCATION_ID')
 
     if (!accessToken || !locationId) {
       return new Response(JSON.stringify({ error: 'Square configuration missing' }), {
@@ -88,9 +82,7 @@ Deno.serve(async (req) => {
 
     if (type === 'checkout') {
       // Create payment link
-      squareUrl = isSandbox
-        ? 'https://connect.squareupsandbox.com/v2/online-checkout/payment-links'
-        : 'https://connect.squareup.com/v2/online-checkout/payment-links'
+      squareUrl = 'https://connect.squareup.com/v2/online-checkout/payment-links'
 
       requestBody = {
         idempotency_key: idempotencyKey,
@@ -108,9 +100,7 @@ Deno.serve(async (req) => {
       }
     } else {
       // Create payment
-      squareUrl = isSandbox
-        ? 'https://connect.squareupsandbox.com/v2/payments'
-        : 'https://connect.squareup.com/v2/payments'
+      squareUrl = 'https://connect.squareup.com/v2/payments'
 
       if (cardDetails) {
         // Use card details directly (for development/testing - not recommended for production)
@@ -162,10 +152,43 @@ Deno.serve(async (req) => {
 
     if (!response.ok) {
       console.error('Square API error:', result)
-      const errorMessage = type === 'checkout' ? 'Checkout creation failed' : 'Payment failed'
-      const detailedError = result.errors ? result.errors[0]?.detail || result.errors[0]?.code || 'Unknown error' : 'Unknown error'
+
+      // Handle specific Square error codes with user-friendly messages
+      let userFriendlyMessage = 'Payment failed. Please try again.';
+      if (result.errors && result.errors.length > 0) {
+        const primaryError = result.errors[0];
+        switch (primaryError.code) {
+          case 'EXPIRATION_FAILURE':
+            userFriendlyMessage = 'Card expired. Please check your expiration date and try again.';
+            break;
+          case 'CVV_FAILURE':
+            userFriendlyMessage = 'Invalid security code. Please check your CVV and try again.';
+            break;
+          case 'CARD_DECLINED':
+            userFriendlyMessage = 'Card declined. Please try a different card or contact your bank.';
+            break;
+          case 'INSUFFICIENT_FUNDS':
+            userFriendlyMessage = 'Insufficient funds. Please check your account balance or try a different card.';
+            break;
+          case 'INVALID_CARD':
+            userFriendlyMessage = 'Invalid card. Please check your card details and try again.';
+            break;
+          case 'GENERIC_DECLINE':
+            userFriendlyMessage = 'Payment declined. Please try a different card or contact your bank.';
+            break;
+          case 'CARD_NOT_SUPPORTED':
+            userFriendlyMessage = 'Card type not supported. Please try a different card.';
+            break;
+          case 'TRANSACTION_LIMIT':
+            userFriendlyMessage = 'Transaction limit exceeded. Please contact your bank.';
+            break;
+          default:
+            userFriendlyMessage = 'Payment failed. Please check your card details and try again.';
+        }
+      }
+
       return new Response(JSON.stringify({
-        error: `${errorMessage}: ${detailedError}`,
+        error: userFriendlyMessage,
         details: result
       }), {
         status: response.status,
@@ -218,9 +241,9 @@ Deno.serve(async (req) => {
   1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
   2. Make an HTTP request:
 
-  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/process-payment' \
-    --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
-    --header 'Content-Type: application/json' \
-    --data '{"name":"Functions"}'
+   curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/process-payment' \
+     --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
+     --header 'Content-Type: application/json' \
+     --data '{"name":"Functions"}'
 
-*/
+ */
