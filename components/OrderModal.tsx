@@ -175,7 +175,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
           freeSauceAvailable = false;
         }
       const isDrink = !isSauce;
-      if (freeDrinkAvailable       if (freeDrinkAvailable if (item.name === 'Kids Meal' && isDrink) {if (item.name === 'Kids Meal' && isDrink) { isDrink) {      if (freeDrinkAvailable if (item.name === 'Kids Meal' && isDrink) {if (item.name === 'Kids Meal' && isDrink) { isDrink) { isDrink) {
+      if (freeDrinkAvailable       if (freeDrinkAvailable       if (freeDrinkAvailable if (item.name === 'Kids Meal' && isDrink) {if (item.name === 'Kids Meal' && isDrink) { isDrink) {      if (freeDrinkAvailable if (item.name === 'Kids Meal' && isDrink) {if (item.name === 'Kids Meal' && isDrink) { isDrink) { isDrink) {      if (freeDrinkAvailable       if (freeDrinkAvailable if (item.name === 'Kids Meal' && isDrink) {if (item.name === 'Kids Meal' && isDrink) { isDrink) {      if (freeDrinkAvailable if (item.name === 'Kids Meal' && isDrink) {if (item.name === 'Kids Meal' && isDrink) { isDrink) { isDrink) { isDrink) {
         price = 0;
         freeDrinkAvailable = false;
       }
