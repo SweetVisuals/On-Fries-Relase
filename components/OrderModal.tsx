@@ -35,7 +35,9 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
   const [selectedAddons, setSelectedAddons] = useState<{ [key: string]: number }>({});
   const [currentStep, setCurrentStep] = useState(1);
   const [isOrderDetailsCollapsed, setIsOrderDetailsCollapsed] = useState(true);
+  const [scrollTop, setScrollTop] = useState<number | null>(null);
 
+  const scrollRef = useRef<HTMLDivElement>(null);
   const prevIsOpen = usePrevious(isOpen);
   const prevOrderToEditId = usePrevious(orderToEdit?.id);
 
@@ -81,6 +83,12 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
 
     return () => {
       document.body.style.overflow = '';
+  useEffect(() => {
+    if (scrollTop !== null) {
+      scrollRef.current?.scrollTo(0, scrollTop);
+      setScrollTop(null);
+    }
+  }, [scrollTop]);
     };
   }, [isOpen]);
 
@@ -108,6 +116,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
       } else {
         delete newAddons[addon];
       }
+    setScrollTop(scrollRef.current?.scrollTop || 0);
       return newAddons;
     });
   };
@@ -235,7 +244,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
               <p className="text-zinc-400 text-sm">Select extras and sauces</p>
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto p-6 bg-zinc-950 space-y-8">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 bg-zinc-950 space-y-8">
             {ITEM_ADDONS[customizingItem.name]?.extras?.length > 0 && (
               <div>
                 <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4">Extras</h3>
