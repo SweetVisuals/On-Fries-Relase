@@ -256,7 +256,7 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Card Details (Hosted by Square) */}
         <div>
-          <label className="block text-sm font-bold text-zinc-400 mb-2">Card Details</label>
+          <label className="block text-sm font-bold text-white mb-2">Card Details</label>
           <div
             id="card-container"
             className="w-full px-4 py-3 bg-zinc-900 border border-zinc-700 rounded-lg focus-within:ring-2 focus-within:ring-brand-yellow/50"
