@@ -118,12 +118,20 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
       if (newAddons[addon]) {
         delete newAddons[addon];
       } else {
+        // If it's a drink for Kids Meal, remove other drinks
+        if (customizingItem?.name === 'Kids Meal' && ITEM_ADDONS['Kids Meal'].drinks.includes(addon)) {
+          // Remove other drinks
+          ITEM_ADDONS['Kids Meal'].drinks.forEach(drink => {
+            if (drink !== addon) {
+              delete newAddons[drink];
+            }
+          });
+        }
         newAddons[addon] = 1;
       }
       return newAddons;
     });
   };
-
   const confirmCustomization = () => {
     if (customizingItem) {
       const addonsArray = Object.entries(selectedAddons).flatMap(([addon, quantity]) => Array(quantity).fill(addon)) as string[];
