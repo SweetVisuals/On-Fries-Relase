@@ -141,7 +141,7 @@ Deno.serve(async (req) => {
     const response = await fetch(squareUrl, {
       method: 'POST',
       headers: {
-        'Square-Version': '2025-10-16',
+        'Square-Version': '2024-10-17',
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
       },
@@ -243,7 +243,7 @@ Deno.serve(async (req) => {
 
    curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/process-payment' \
      --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
-     --header 'Content-Type: application/json' \
+     --header 'Content-Type': application/json' \
      --data '{"name":"Functions"}'
 
  */
