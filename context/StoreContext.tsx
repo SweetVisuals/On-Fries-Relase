@@ -10,7 +10,7 @@ const MOCK_STOCK: StockItem[] = [
 ];
 
 const MENU_STOCK_REQUIREMENTS: Record<string, string[]> = {
-  'Deluxe Steak & Fries': ['Steaks'],
+  'Deluxe Steak': ['Steaks'],
   'Steak & Fries': ['Steaks'],
   'Steak Only': ['Steaks'],
   'Short Rib': ['Short Rib'],
@@ -33,7 +33,7 @@ const MENU_STOCK_REQUIREMENTS: Record<string, string[]> = {
 // Stock deduction amounts (multipliers)
 const STOCK_DEDUCTIONS: Record<string, number> = {
   'Steak & Fries': 1,
-  'Deluxe Steak & Fries': 2,
+  'Deluxe Steak': 2,
   'Steak Only': 1,
   'Short Rib': 2,
   'Lamb': 2,
@@ -51,7 +51,7 @@ const calculateStockDeductions = (orderItems: OrderItem[]): Record<string, numbe
     const itemName = item.name.toLowerCase();
 
     // Handle main items
-    if (itemName === 'deluxe steak & fries') {
+    if (itemName === 'deluxe steak') {
       deductions['Steaks'] = (deductions['Steaks'] || 0) + 2 * item.quantity;
     } else if (itemName.includes('steak') && itemName.includes('fries')) {
       deductions['Steaks'] = (deductions['Steaks'] || 0) + 1 * item.quantity;
@@ -391,11 +391,31 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const deductions = calculateStockDeductions(order.items);
       for (const [stockName, amount] of Object.entries(deductions)) {
         try {
-          await supabase
+          // First get current quantity
+          const { data: currentStock, error: fetchError } = await supabase
             .from('stock_items')
-            .update({ quantity: supabase.sql`quantity - ${amount}` })
+            .select('quantity')
             .eq('name', stockName)
-            .eq('location', 'Trailer');
+            .eq('location', 'Trailer')
+            .single();
+
+          if (fetchError) {
+            console.error('Error fetching stock for', stockName, fetchError);
+            continue;
+          }
+
+          if (currentStock) {
+            const newQuantity = Math.max(0, currentStock.quantity - amount);
+            const { error: updateError } = await supabase
+              .from('stock_items')
+              .update({ quantity: newQuantity })
+              .eq('name', stockName)
+              .eq('location', 'Trailer');
+
+            if (updateError) {
+              console.error('Error updating stock for', stockName, updateError);
+            }
+          }
         } catch (stockError) {
           console.error('Error updating stock for', stockName, stockError);
           // Continue with other updates even if one fails

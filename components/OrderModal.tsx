@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 
 import { X, Plus, Minus, Check, Trash2, ChevronLeft, ArrowRight, ShoppingCart, ChevronDown, ChevronUp } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
@@ -35,8 +35,9 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
   const [selectedAddons, setSelectedAddons] = useState<{ [key: string]: number }>({});
   const [currentStep, setCurrentStep] = useState(1);
   const [isOrderDetailsCollapsed, setIsOrderDetailsCollapsed] = useState(true);
-
   const scrollRef = useRef<HTMLDivElement>(null);
+  const savedScrollTop = useRef(0);
+
   const prevIsOpen = usePrevious(isOpen);
   const prevOrderToEditId = usePrevious(orderToEdit?.id);
 
@@ -45,12 +46,12 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
     if (isOpen && !orderToEdit && !prevIsOpen) {
       setCart([]);
       setCustomerName('');
-      setCurrentStep(1);
+      setCurrentStep(2);
       setIsOrderDetailsCollapsed(true);
       setSelectedSection('Main');
       setCustomizingItem(null);
       setSelectedAddons({});
-    } 
+    }
     // When a different order is selected for edit (isOpen is true, and orderToEdit.id changes)
     else if (isOpen && orderToEdit && prevOrderToEditId !== orderToEdit.id) {
       setCart(orderToEdit.items);
@@ -82,7 +83,14 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
 
     return () => {
       document.body.style.overflow = '';
-  }, [isOpen]););
+    };
+  }, [isOpen]);
+
+  useLayoutEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = savedScrollTop.current;
+    }
+  }, [selectedAddons]);
 
   if (!isOpen) return null;
 
@@ -97,10 +105,12 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
   };
 
   const incrementAddon = (addon: string) => {
+    savedScrollTop.current = scrollRef.current?.scrollTop || 0;
     setSelectedAddons(prev => ({ ...prev, [addon]: (prev[addon] || 0) + 1 }));
   };
 
   const decrementAddon = (addon: string) => {
+    savedScrollTop.current = scrollRef.current?.scrollTop || 0;
     setSelectedAddons(prev => {
       const newAddons = { ...prev };
       if (newAddons[addon] > 1) {
@@ -108,12 +118,12 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
       } else {
         delete newAddons[addon];
       }
-    setScrollTop(scrollRef.current?.scrollTop || 0);
       return newAddons;
-  setTimeout(() => scrollRef.current?.scrollTo(0, currentScrollTop), 0);    });
+    });
   };
 
   const toggleAddon = (addon: string) => {
+    savedScrollTop.current = scrollRef.current?.scrollTop || 0;
     setSelectedAddons(prev => {
       const newAddons = { ...prev };
       if (newAddons[addon]) {
@@ -131,7 +141,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
         newAddons[addon] = 1;
       }
       return newAddons;
-  setTimeout(() => scrollRef.current?.scrollTo(0, currentScrollTop), 0);    });
+    });
   };
   const confirmCustomization = () => {
     if (customizingItem) {
@@ -236,7 +246,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
               <p className="text-zinc-400 text-sm">Select extras and sauces</p>
             </div>
           </div>
-          <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 bg-zinc-950 space-y-8">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 bg-zinc-950 space-y-8" style={{ WebkitOverflowScrolling: 'touch' }}>
             {ITEM_ADDONS[customizingItem.name]?.extras?.length > 0 && (
               <div>
                 <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4">Extras</h3>
@@ -251,15 +261,15 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
                             <span className="font-medium">{addon}</span>
                           </div>
                           <div className="flex items-center gap-2 bg-zinc-800/50 rounded-full p-1 border border-zinc-700/50">
-                            <button onClick={() => decrementAddon(addon)} className="w-8 h-8 flex items-center justify-center hover:bg-zinc-700 rounded-full text-zinc-400 hover:text-white transition-colors"><Minus className="w-4 h-4" /></button>
+                            <button tabIndex={-1} onClick={() => decrementAddon(addon)} className="w-8 h-8 flex items-center justify-center hover:bg-zinc-700 rounded-full text-zinc-400 hover:text-white transition-colors"><Minus className="w-4 h-4" /></button>
                             <span className="text-base font-bold w-5 text-center text-white">{count}</span>
-                            <button onClick={() => incrementAddon(addon)} className="w-8 h-8 flex items-center justify-center hover:bg-zinc-700 rounded-full text-zinc-400 hover:text-white transition-colors"><Plus className="w-4 h-4" /></button>
+                            <button tabIndex={-1} onClick={() => incrementAddon(addon)} className="w-8 h-8 flex items-center justify-center hover:bg-zinc-700 rounded-full text-zinc-400 hover:text-white transition-colors"><Plus className="w-4 h-4" /></button>
                           </div>
                         </div>
                       );
                     }
                     return (
-                      <button key={addon} tabIndex={-1} onClick={() => toggleAddon(addon)} className={`p-4 rounded-xl border text-left flex justify-between items-center ${selectedAddons[addon] ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'}`}>
+                      <button tabIndex={-1} key={addon} onClick={() => toggleAddon(addon)} className={`p-4 rounded-xl border text-left flex justify-between items-center ${selectedAddons[addon] ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'}`}>
                         <span className="font-medium">{addon}</span>
                         <span className="text-sm font-bold text-brand-yellow">+£{ADDON_PRICES[addon]?.toFixed(2)}</span>
                       </button>
@@ -283,15 +293,15 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
                             <span className="font-medium">{sauce}</span>
                           </div>
                           <div className="flex items-center gap-2 bg-zinc-800/50 rounded-full p-1 border border-zinc-700/50">
-                            <button onClick={() => decrementAddon(sauce)} className="w-8 h-8 flex items-center justify-center hover:bg-zinc-700 rounded-full text-zinc-400 hover:text-white transition-colors"><Minus className="w-4 h-4" /></button>
+                            <button tabIndex={-1} onClick={() => decrementAddon(sauce)} className="w-8 h-8 flex items-center justify-center hover:bg-zinc-700 rounded-full text-zinc-400 hover:text-white transition-colors"><Minus className="w-4 h-4" /></button>
                             <span className="text-base font-bold w-5 text-center text-white">{count}</span>
-                            <button onClick={() => incrementAddon(sauce)} className="w-8 h-8 flex items-center justify-center hover:bg-zinc-700 rounded-full text-zinc-400 hover:text-white transition-colors"><Plus className="w-4 h-4" /></button>
+                            <button tabIndex={-1} onClick={() => incrementAddon(sauce)} className="w-8 h-8 flex items-center justify-center hover:bg-zinc-700 rounded-full text-zinc-400 hover:text-white transition-colors"><Plus className="w-4 h-4" /></button>
                           </div>
                         </div>
                       );
                     }
                     return (
-                      <button key={sauce} tabIndex={-1} onClick={() => toggleAddon(sauce)} className={`p-4 rounded-xl border text-left flex justify-between items-center ${selectedAddons[sauce] ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'}`}>
+                      <button tabIndex={-1} key={sauce} onClick={() => toggleAddon(sauce)} className={`p-4 rounded-xl border text-left flex justify-between items-center ${selectedAddons[sauce] ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'}`}>
                         <span className="font-medium">{sauce}</span>
                         {ADDON_PRICES[sauce] && !isFree ? <span className="text-sm font-bold text-brand-yellow">+£{ADDON_PRICES[sauce]?.toFixed(2)}</span> : <span className="text-xs font-bold text-zinc-500 uppercase">Free</span>}
                       </button>
@@ -314,15 +324,16 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
                                 <span className="font-medium">{drink}</span>
                               </div>
                               <div className="flex items-center gap-2 bg-zinc-800/50 rounded-full p-1 border border-zinc-700/50">
-                                <button onClick={() => decrementAddon(drink)} className="w-8 h-8 flex items-center justify-center hover:bg-zinc-700 rounded-full text-zinc-400 hover:text-white transition-colors"><Minus className="w-4 h-4" /></button>
+                                <button tabIndex={-1} onClick={() => decrementAddon(drink)} className="w-8 h-8 flex items-center justify-center hover:bg-zinc-700 rounded-full text-zinc-400 hover:text-white transition-colors"><Minus className="w-4 h-4" /></button>
                                 <span className="text-base font-bold w-5 text-center text-white">{count}</span>
-                                <button onClick={() => incrementAddon(drink)} className="w-8 h-8 flex items-center justify-center hover:bg-zinc-700 rounded-full text-zinc-400 hover:text-white transition-colors"><Plus className="w-4 h-4" /></button>
+                                <button tabIndex={-1} onClick={() => incrementAddon(drink)} className="w-8 h-8 flex items-center justify-center hover:bg-zinc-700 rounded-full text-zinc-400 hover:text-white transition-colors"><Plus className="w-4 h-4" /></button>
                               </div>
                             </div>
                           );
                         }
                         return (
                           <button
+                            tabIndex={-1}
                             key={drink}
                             onClick={() => toggleAddon(drink)}
                             className={`p-4 rounded-xl border text-left flex justify-between items-center ${selectedAddons[drink]
