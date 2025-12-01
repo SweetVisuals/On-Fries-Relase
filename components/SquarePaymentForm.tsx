@@ -48,7 +48,7 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
 
   // Environment-based Square configuration - Force production for live payments
   const SQUARE_CONFIG = {
-    applicationId: 'sq0idp-oBleGoboqpllvndrWQ9Zuw',
+    applicationId: 'sq0idp-oBleGoboqpllvndrWQ9Zuw', // CONFIRMED: This matches your Square production app
     locationId: 'L14KB0DPJ20SD',
     environment: 'production' as 'production',
     scriptUrl: 'https://web.squarecdn.com/v1/square.js'
@@ -79,11 +79,6 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
       }
       .sq-input::placeholder {
         color: rgba(255, 255, 255, 0.6) !important;
-      }
-      .sq-input:-webkit-autofill {
-        -webkit-text-fill-color: white !important;
-        -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;
-        transition: background-color 5000s ease-in-out 0s !important;
       }
       /* Additional styling for better dark theme support */
       .sq-card-number, .sq-expiration-date, .sq-cvv, .sq-postal-code {
@@ -126,15 +121,11 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
       const card = await payments.card({
         style: {
           input: {
-            color: 'white',
-            fontSize: '16px',
-            fontFamily: 'system-ui, -apple-system, sans-serif'
+            color: '#ffffff',
+            fontSize: '16px'
           },
           'input::placeholder': {
-            color: 'rgba(255, 255, 255, 0.6)'
-          },
-          '.invalid': {
-            color: '#ef4444'
+            color: '#ffffff99'
           }
         }
       });
