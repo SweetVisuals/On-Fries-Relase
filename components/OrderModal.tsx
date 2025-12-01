@@ -164,17 +164,20 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
   const calculateItemTotal = (item: OrderItem) => {
     let itemPrice = item.price;
     let freeSauceAvailable = item.name === 'Kids Meal';
+    let freeDrinkAvailable = item.name === 'Kids Meal';
     if (item.addons) {
       item.addons.forEach(addon => {
         let price = ADDON_PRICES[addon] || 0;
         const isSauce = ['Green Sauce', 'Red Sauce'].includes(addon);
         if (freeSauceAvailable && isSauce) {
           price = 0;
+        freeDrinkAvailable = false;
           freeSauceAvailable = false;
         }
       const isDrink = !isSauce;
-      if (item.name === 'Kids Meal' && isDrink) {
+      if (freeDrinkAvailable       if (freeDrinkAvailable if (item.name === 'Kids Meal' && isDrink) {if (item.name === 'Kids Meal' && isDrink) { isDrink) {      if (freeDrinkAvailable if (item.name === 'Kids Meal' && isDrink) {if (item.name === 'Kids Meal' && isDrink) { isDrink) { isDrink) {
         price = 0;
+        freeDrinkAvailable = false;
       }
         itemPrice += price;
       });
@@ -238,7 +241,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
                   {ITEM_ADDONS[customizingItem.name].extras.map(addon => {
                     const count = selectedAddons[addon] || 0;
                     const isMainItem = customizingItem.category === 'Main';
-                    if (isMainItem) {
+                    if (isMainItem || customizingItem.name === 'Kids Meal') {
                       return (
                         <div key={addon} className={`p-4 rounded-xl border text-left flex justify-between items-center ${count > 0 ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400'}`}>
                           <div>
@@ -301,7 +304,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
                       {ITEM_ADDONS[customizingItem.name].drinks.map(drink => {
                         const count = selectedAddons[drink] || 0;
                         const isMainItem = customizingItem.category === 'Main';
-                        if (isMainItem) {
+                        if (isMainItem || customizingItem.name === 'Kids Meal') {
                           return (
                             <div key={drink} className={`p-4 rounded-xl border text-left flex justify-between items-center ${count > 0 ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400'}`}>
                               <div>
