@@ -164,20 +164,19 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
   const calculateItemTotal = (item: OrderItem) => {
     let itemPrice = item.price;
     let freeSauceAvailable = item.name === 'Kids Meal';
-      item.addons.forEach(addon => {
-        let price = ADDON_PRICES[addon] || 0;
-        const isSauce = ['Green Sauce', 'Red Sauce'].includes(addon);
-        if (freeSauceAvailable && isSauce) {
-          price = 0;
-        freeDrinkAvailable = false;
-          freeSauceAvailable = false;
-        }
-      const isDrink = !isSauce;
-        if (item.name === 'Kids Meal' && isDrink) {        price = 0;
+    item.addons.forEach(addon => {
+      let price = ADDON_PRICES[addon] || 0;
+      const isSauce = ['Green Sauce', 'Red Sauce'] .includes(addon);
+      if (freeSauceAvailable && isSauce) {
+        price = 0;
+        freeSauceAvailable = false;
       }
-        itemPrice += price;
-    }
-    return itemPrice * item.quantity;
+      const isDrink = !isSauce;
+      if (item.name === 'Kids Meal' && isDrink) {
+        price = 0;
+      }
+      itemPrice += price;
+    });    return itemPrice * item.quantity;
   };
 
   const total = cart.reduce((sum, item) => sum + calculateItemTotal(item), 0);
