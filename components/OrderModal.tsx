@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState, useEffect, useRef } from 'react';
+
 import { X, Plus, Minus, Check, Trash2, ChevronLeft, ArrowRight, ShoppingCart, ChevronDown, ChevronUp } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { OrderItem, Order, MenuItem } from '../types';
@@ -156,10 +156,10 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
     });
   };
 
-  const updateQuantity = useCallback((index: number, delta: number) => {
+  const updateQuantity =  ((index: number, delta: number) => {
     setCart(prev => prev.map((item, i) => i === index ? { ...item, quantity: Math.max(0, item.quantity + delta) } : item)
       .filter(item => item.quantity > 0));
-  }, []);
+  };
 
   const calculateItemTotal = (item: OrderItem) => {
     let itemPrice = item.price;
