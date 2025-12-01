@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Plus, Minus, Check, Trash2, ChevronLeft, ArrowRight, ShoppingCart, ChevronDown, ChevronUp } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { OrderItem, Order, MenuItem } from '../types';
@@ -155,10 +156,10 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
     });
   };
 
-  const updateQuantity = (index: number, delta: number) => {
+  const updateQuantity = useCallback((index: number, delta: number) => {
     setCart(prev => prev.map((item, i) => i === index ? { ...item, quantity: Math.max(0, item.quantity + delta) } : item)
       .filter(item => item.quantity > 0));
-  };
+  }, []);
 
   const calculateItemTotal = (item: OrderItem) => {
     let itemPrice = item.price;
@@ -215,7 +216,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
   const MenuSelection = () => (
     <div className="flex flex-col h-full">
       {customizingItem ? (
-        <div key={customizingItem.id} className="flex flex-col h-full animate-fade-in">
+        <div key={customizingItem.id} className="flex flex-col h-full">
           <div className="p-6 border-b border-zinc-800 bg-zinc-900/50 flex items-center gap-4">
             <button onClick={() => setCustomizingItem(null)} className="p-2 hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-white transition-colors">
               <ChevronLeft className="w-6 h-6" />
@@ -235,7 +236,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
                     const isMainItem = customizingItem.category === 'Main';
                     if (isMainItem) {
                       return (
-                        <div key={addon} className={`p-4 rounded-xl border text-left transition-all flex justify-between items-center ${count > 0 ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400'}`}>
+                        <div key={addon} className={`p-4 rounded-xl border text-left flex justify-between items-center ${count > 0 ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400'}`}>
                           <div>
                             <span className="font-medium">{addon}</span>
                           </div>
@@ -248,7 +249,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
                       );
                     }
                     return (
-                      <button key={addon} onClick={() => toggleAddon(addon)} className={`p-4 rounded-xl border text-left transition-all flex justify-between items-center ${selectedAddons[addon] ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'}`}>
+                      <button key={addon} onClick={() => toggleAddon(addon)} className={`p-4 rounded-xl border text-left flex justify-between items-center ${selectedAddons[addon] ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'}`}>
                         <span className="font-medium">{addon}</span>
                         <span className="text-sm font-bold text-brand-yellow">+£{ADDON_PRICES[addon]?.toFixed(2)}</span>
                       </button>
@@ -267,7 +268,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
                     const isFree = customizingItem.name === 'Kids Meal' && !Object.keys(selectedAddons).some(a => ['Green Sauce', 'Red Sauce'].includes(a) && a !== sauce);
                     if (isMainItem) {
                       return (
-                        <div key={sauce} className={`p-4 rounded-xl border text-left transition-all flex justify-between items-center ${count > 0 ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400'}`}>
+                        <div key={sauce} className={`p-4 rounded-xl border text-left flex justify-between items-center ${count > 0 ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400'}`}>
                           <div>
                             <span className="font-medium">{sauce}</span>
                           </div>
@@ -280,7 +281,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
                       );
                     }
                     return (
-                      <button key={sauce} onClick={() => toggleAddon(sauce)} className={`p-4 rounded-xl border text-left transition-all flex justify-between items-center ${selectedAddons[sauce] ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'}`}>
+                      <button key={sauce} onClick={() => toggleAddon(sauce)} className={`p-4 rounded-xl border text-left flex justify-between items-center ${selectedAddons[sauce] ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'}`}>
                         <span className="font-medium">{sauce}</span>
                         {ADDON_PRICES[sauce] && !isFree ? <span className="text-sm font-bold text-brand-yellow">+£{ADDON_PRICES[sauce]?.toFixed(2)}</span> : <span className="text-xs font-bold text-zinc-500 uppercase">Free</span>}
                       </button>
@@ -298,7 +299,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
                         const isMainItem = customizingItem.category === 'Main';
                         if (isMainItem) {
                           return (
-                            <div key={drink} className={`p-4 rounded-xl border text-left transition-all flex justify-between items-center ${count > 0 ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400'}`}>
+                            <div key={drink} className={`p-4 rounded-xl border text-left flex justify-between items-center ${count > 0 ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400'}`}>
                               <div>
                                 <span className="font-medium">{drink}</span>
                               </div>
@@ -314,7 +315,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
                           <button
                             key={drink}
                             onClick={() => toggleAddon(drink)}
-                            className={`p-4 rounded-xl border text-left transition-all flex justify-between items-center ${selectedAddons[drink]
+                            className={`p-4 rounded-xl border text-left flex justify-between items-center ${selectedAddons[drink]
                               ? 'bg-brand-yellow/10 border-brand-yellow text-white'
                               : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'
                               }`}
@@ -329,7 +330,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
                 )}
           </div>
           <div className="p-6 border-t border-zinc-800 bg-zinc-900">
-            <button onClick={confirmCustomization} className="w-full py-4 bg-brand-yellow text-black font-bold text-lg rounded-xl hover:bg-yellow-400 transition-all shadow-lg shadow-yellow-900/20">
+            <button onClick={confirmCustomization} className="w-full py-4 bg-brand-yellow text-black font-bold text-lg rounded-xl hover:bg-yellow-400 shadow-lg shadow-yellow-900/20">
               Add to Order
             </button>
           </div>
@@ -348,7 +349,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
             </div>
             <div className="flex gap-2 overflow-x-auto no-scrollbar">
               {SECTIONS.map(section => (
-                <button key={section.id} onClick={() => setSelectedSection(section.id)} className={`px-6 py-3 rounded-xl text-sm font-bold whitespace-nowrap transition-all flex-1 border-2 ${selectedSection === section.id ? 'bg-brand-yellow text-black border-brand-yellow' : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-700 hover:text-white'}`}>
+                <button key={section.id} onClick={() => setSelectedSection(section.id)} className={`px-6 py-3 rounded-xl text-sm font-bold whitespace-nowrap flex-1 border-2 ${selectedSection === section.id ? 'bg-brand-yellow text-black border-brand-yellow' : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-700 hover:text-white'}`}>
                   {section.label}
                 </button>
               ))}
@@ -357,7 +358,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
           <div className="flex-1 overflow-y-auto p-6 bg-zinc-950">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredMenu.map(item => (
-                <button key={item.id} onClick={() => handleItemClick(item)} className="flex flex-col items-start p-4 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-brand-yellow transition-all group text-left hover:shadow-lg hover:shadow-yellow-900/10">
+                <button key={item.id} onClick={() => handleItemClick(item)} className="flex flex-col items-start p-4 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-brand-yellow group text-left hover:shadow-lg hover:shadow-yellow-900/10">
                   <div className="flex justify-between w-full mb-2">
                     <span className="font-bold text-white text-sm">{item.name === 'Deluxe Steak & Fries' ? 'Deluxe Steak' : item.name}</span>
                     <span className="font-bold text-brand-yellow text-sm">£{item.price.toFixed(2)}</span>
@@ -369,7 +370,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
             </div>
           </div>
           <div className="md:hidden p-6 border-t border-zinc-800 bg-zinc-900">
-             <button onClick={() => setCurrentStep(3)} disabled={cart.length === 0} className="w-full py-4 bg-brand-yellow text-black font-bold text-lg rounded-xl hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-yellow-900/20 flex justify-center items-center gap-2">
+             <button onClick={() => setCurrentStep(3)} disabled={cart.length === 0} className="w-full py-4 bg-brand-yellow text-black font-bold text-lg rounded-xl hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-yellow-900/20 flex justify-center items-center gap-2">
                 View Order <ArrowRight className="w-5 h-5" />
               </button>
           </div>
@@ -479,7 +480,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
         </div>
         <div className="flex gap-3">
           {orderToEdit && <button onClick={handleDelete} className="p-4 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-xl hover:text-red-400 hover:bg-red-900/10 hover:border-red-900/30 transition-all"><Trash2 className="w-5 h-5" /></button>}
-          <button onClick={handleSubmit} disabled={!customerName || cart.length === 0} className="flex-1 py-4 bg-brand-yellow text-black font-bold text-lg rounded-xl hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-yellow-900/20 flex justify-center items-center gap-2 uppercase tracking-wide">
+          <button onClick={handleSubmit} disabled={!customerName || cart.length === 0} className="flex-1 py-4 bg-brand-yellow text-black font-bold text-lg rounded-xl hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-yellow-900/20 flex justify-center items-center gap-2 uppercase tracking-wide">
             <Check className="w-5 h-5" /> {orderToEdit ? 'Update Order' : 'Confirm Order'}
           </button>
         </div>
@@ -488,7 +489,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
   );
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 md:flex md:items-center md:justify-center md:p-4 animate-fade-in">
+    <div className="fixed inset-0 bg-black/80 z-50 md:flex md:items-center md:justify-center md:p-4">
       <div className="w-full h-full bg-zinc-950 md:max-w-5xl md:border md:border-zinc-800 md:rounded-3xl flex flex-col md:flex-row md:shadow-2xl overflow-hidden md:max-h-[90vh]">
         {/* Mobile View */}
         <div className="md:hidden h-full flex flex-col">
@@ -504,7 +505,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
                   <input id="customerName" type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Enter name or table number" className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-brand-yellow focus:outline-none font-medium text-lg" autoFocus />
                 </div>
               </div>
-              <button onClick={() => setCurrentStep(2)} disabled={!customerName} className="w-full py-4 bg-brand-yellow text-black font-bold text-lg rounded-xl hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-yellow-900/20 flex justify-center items-center gap-2">
+              <button onClick={() => setCurrentStep(2)} disabled={!customerName} className="w-full py-4 bg-brand-yellow text-black font-bold text-lg rounded-xl hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-yellow-900/20 flex justify-center items-center gap-2">
                 Next <ArrowRight className="w-5 h-5" />
               </button>
             </div>
