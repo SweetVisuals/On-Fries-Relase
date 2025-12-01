@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Loader2, CreditCard, Lock } from 'lucide-react';
+import { Loader2, CreditCard, Lock, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 declare global {
@@ -44,6 +44,7 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
   });
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [squareFields, setSquareFields] = useState<any>(null);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   // Environment-based Square configuration - Force production for live payments
   const SQUARE_CONFIG = {
@@ -65,23 +66,28 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
     };
     document.body.appendChild(script);
 
-    // Add CSS for Square hosted fields
+    // Add CSS for Square hosted fields - more comprehensive styling
     const style = document.createElement('style');
     style.textContent = `
-      #card-container input {
-        color: white !important;
-      }
-      #card-container input::placeholder {
-        color: rgba(255, 255, 255, 0.6) !important;
-      }
-      #card-container .sq-input {
-        color: white !important;
-      }
-      #card-container .sq-input::placeholder {
-        color: rgba(255, 255, 255, 0.6) !important;
-      }
       #card-container iframe {
-        color-scheme: dark;
+        color-scheme: dark !important;
+      }
+      /* Square hosted field styling - these may not penetrate iframe but worth trying */
+      .sq-input {
+        color: white !important;
+        background-color: transparent !important;
+      }
+      .sq-input::placeholder {
+        color: rgba(255, 255, 255, 0.6) !important;
+      }
+      .sq-input:-webkit-autofill {
+        -webkit-text-fill-color: white !important;
+        -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;
+        transition: background-color 5000s ease-in-out 0s !important;
+      }
+      /* Additional styling for better dark theme support */
+      .sq-card-number, .sq-expiration-date, .sq-cvv, .sq-postal-code {
+        color: white !important;
       }
     `;
     document.head.appendChild(style);
@@ -117,7 +123,21 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
       );
 
       // Create hosted card element (includes all card fields)
-      const card = await payments.card();
+      const card = await payments.card({
+        style: {
+          input: {
+            color: 'white',
+            fontSize: '16px',
+            fontFamily: 'system-ui, -apple-system, sans-serif'
+          },
+          'input::placeholder': {
+            color: 'rgba(255, 255, 255, 0.6)'
+          },
+          '.invalid': {
+            color: '#ef4444'
+          }
+        }
+      });
 
       // Attach card to DOM element
       await card.attach('#card-container');
@@ -151,6 +171,8 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
       return;
     }
 
+    // Clear any previous errors
+    setPaymentError(null);
     setIsLoading(true);
     setPaymentStatus('Processing payment...');
 
@@ -195,6 +217,7 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
       console.error('Payment error:', error);
       const errorMessage = error.message || 'Payment failed. Please try again.';
       setPaymentStatus('');
+      setPaymentError(errorMessage);
       onError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -224,8 +247,19 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
           />
         </div>
 
+        {/* Payment Error */}
+        {paymentError && (
+          <div className="p-4 bg-red-900/20 border border-red-500/30 rounded-lg text-red-400 text-sm flex items-start gap-3 animate-fade-in">
+            <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-red-300 mb-1">Payment Failed</p>
+              <p className="text-red-400">{paymentError}</p>
+            </div>
+          </div>
+        )}
+
         {/* Payment Status */}
-        {paymentStatus && (
+        {paymentStatus && !paymentError && (
           <div className="p-3 bg-blue-900/20 border border-blue-500/20 rounded-lg text-blue-400 text-sm flex items-center gap-2">
             <Loader2 className="w-4 h-4 animate-spin" />
             {paymentStatus}
