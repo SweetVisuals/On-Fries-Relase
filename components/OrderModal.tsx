@@ -172,6 +172,10 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
           price = 0;
           freeSauceAvailable = false;
         }
+      const isDrink = !isSauce;
+      if (item.name === 'Kids Meal' && isDrink) {
+        price = 0;
+      }
         itemPrice += price;
       });
     }
@@ -321,7 +325,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
                               }`}
                           >
                             <span className="font-medium">{drink}</span>
-                            <span className="text-sm font-bold text-brand-yellow">+£{ADDON_PRICES[drink]?.toFixed(2)}</span>
+                            {customizingItem.name === 'Kids Meal' ? <span className="text-xs font-bold text-zinc-500 uppercase">Free</span> : <span className="text-sm font-bold text-brand-yellow">+£{ADDON_PRICES[drink]?.toFixed(2)}</span>}
                           </button>
                         );
                       })}
