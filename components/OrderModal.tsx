@@ -258,7 +258,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
                       );
                     }
                     return (
-                      <button key={addon} onClick={() => toggleAddon(addon)} className={`p-4 rounded-xl border text-left flex justify-between items-center ${selectedAddons[addon] ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'}`}>
+                      <button key={addon} tabIndex={-1} onClick={() => toggleAddon(addon)} className={`p-4 rounded-xl border text-left flex justify-between items-center ${selectedAddons[addon] ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'}`}>
                         <span className="font-medium">{addon}</span>
                         <span className="text-sm font-bold text-brand-yellow">+£{ADDON_PRICES[addon]?.toFixed(2)}</span>
                       </button>
@@ -290,7 +290,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
                       );
                     }
                     return (
-                      <button key={sauce} onClick={() => toggleAddon(sauce)} className={`p-4 rounded-xl border text-left flex justify-between items-center ${selectedAddons[sauce] ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'}`}>
+                      <button key={sauce} tabIndex={-1} onClick={() => toggleAddon(sauce)} className={`p-4 rounded-xl border text-left flex justify-between items-center ${selectedAddons[sauce] ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'}`}>
                         <span className="font-medium">{sauce}</span>
                         {ADDON_PRICES[sauce] && !isFree ? <span className="text-sm font-bold text-brand-yellow">+£{ADDON_PRICES[sauce]?.toFixed(2)}</span> : <span className="text-xs font-bold text-zinc-500 uppercase">Free</span>}
                       </button>
