@@ -57,7 +57,7 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
   };
 
   useEffect(() => {
-    console.log('Initializing Square with hardcoded sandbox config:', SQUARE_CONFIG);
+    console.log('Initializing Square with config:', SQUARE_CONFIG);
 
     // Load Square Web Payments SDK
     const script = document.createElement('script');
@@ -96,24 +96,15 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
         activeConfig.locationId
       );
 
-      // Create hosted card fields
-      const cardNumberField = await payments.cardNumber();
-      const expirationDateField = await payments.expirationDate();
-      const cvvField = await payments.cvv();
-      const postalCodeField = await payments.postalCode();
+      // Create hosted card element (includes all card fields)
+      const card = await payments.card();
 
-      // Attach fields to DOM elements
-      await cardNumberField.attach('#card-number');
-      await expirationDateField.attach('#expiration-date');
-      await cvvField.attach('#cvv');
-      await postalCodeField.attach('#postal-code');
+      // Attach card to DOM element
+      await card.attach('#card-container');
 
-      // Store field references for tokenization
+      // Store card reference for tokenization
       setSquareFields({
-        cardNumber: cardNumberField,
-        expirationDate: expirationDateField,
-        cvv: cvvField,
-        postalCode: postalCodeField
+        card: card
       });
 
       setPaymentStatus('');
@@ -131,37 +122,6 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
       return false;
     }
     return true;
-  };
-
-  const handleInputChange = (field: keyof CardFormData, value: string) => {
-    setCardForm(prev => ({ ...prev, [field]: value }));
-
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
-  };
-
-  const formatCardNumber = (value: string) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-    const matches = v.match(/\d{4,16}/g);
-    const match = matches && matches[0] || '';
-    const parts = [];
-    for (let i = 0, len = match.length; i < len; i += 4) {
-      parts.push(match.substring(i, i + 4));
-    }
-    if (parts.length) {
-      return parts.join(' ');
-    } else {
-      return v;
-    }
-  };
-
-  const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatCardNumber(e.target.value);
-    if (formatted.replace(/\s/g, '').length <= 16) {
-      handleInputChange('cardNumber', formatted);
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -190,7 +150,7 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
           throw new Error('Payment form not initialized');
         }
 
-        const tokenResult = await squareFields.cardNumber.tokenize();
+        const tokenResult = await squareFields.card.tokenize();
         if (tokenResult.status === 'INVALID') {
           throw new Error('Invalid card information. Please check your details and try again.');
         } else if (tokenResult.status === 'FAILURE') {
@@ -199,55 +159,26 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
         token = tokenResult.token;
       }
 
-      let paymentResponse;
-
-      if (paymentMode === 'test') {
-        // Test mode: simulate payment processing
-        const simulatedPayment = {
-          id: 'test_payment_' + Date.now(),
-          status: 'COMPLETED',
+      // Call Supabase Edge Function for payment processing
+      const { data, error } = await supabase.functions.invoke('process-payment', {
+        body: {
+          sourceId: token,
           amount: amount,
           currency: 'GBP',
-          orderReference: orderReference || `order_${Date.now()}`,
-          timestamp: new Date().toISOString(),
-          cardDetails: {
-            last4: cardForm.cardNumber.slice(-4),
-            brand: 'VISA'
-          }
-        };
-
-        // Simulate processing delay
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        paymentResponse = { payment: simulatedPayment, errors: null };
-
-      } else {
-        // Live mode: call Supabase Edge Function for payment processing
-        const { data, error } = await supabase.functions.invoke('process-payment', {
-          body: {
-            cardDetails: {
-              number: cardForm.cardNumber,
-              expirationMonth: cardForm.expirationMonth,
-              expirationYear: cardForm.expirationYear,
-              cvv: cardForm.cvv,
-              postalCode: cardForm.postalCode
-            },
-            amount: amount,
-            currency: 'GBP',
-            idempotencyKey: `payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            isSandbox: false
-          }
-        });
-
-        if (error) {
-          throw new Error(`Payment failed: ${error.message}`);
+          idempotencyKey: `payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          isSandbox: paymentMode === 'test'
         }
+      });
 
-        if (!data.success) {
-          throw new Error(data.error || 'Payment processing failed');
-        }
-
-        paymentResponse = { payment: data.payment, errors: null };
+      if (error) {
+        throw new Error(`Payment failed: ${error.message}`);
       }
+
+      if (!data.success) {
+        throw new Error(data.error || 'Payment processing failed');
+      }
+
+      const paymentResponse = { payment: data.payment, errors: null };
 
       // Payment successful
       onSuccess(paymentResponse.payment);
@@ -323,56 +254,14 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Card Number */}
+        {/* Card Details (Hosted by Square) */}
         <div>
-          <label className="block text-sm font-bold text-zinc-400 mb-2">Card Number</label>
+          <label className="block text-sm font-bold text-zinc-400 mb-2">Card Details</label>
           <div
-            id="card-number"
-            className={`w-full px-4 py-3 bg-zinc-900 border rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-brand-yellow/50 ${errors.cardNumber ? 'border-red-500' : 'border-zinc-700'}`}
+            id="card-container"
+            className="w-full px-4 py-3 bg-zinc-900 border border-zinc-700 rounded-lg focus-within:ring-2 focus-within:ring-brand-yellow/50"
             style={{ minHeight: '48px' }}
           />
-          {errors.cardNumber && (
-            <p className="text-red-400 text-sm mt-1">{errors.cardNumber}</p>
-          )}
-        </div>
-
-        {/* Expiration Date and CVV */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-bold text-zinc-400 mb-2">Expiration Date</label>
-            <div
-              id="expiration-date"
-              className={`w-full px-3 py-3 bg-zinc-900 border rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-brand-yellow/50 ${errors.expirationMonth || errors.expirationYear ? 'border-red-500' : 'border-zinc-700'}`}
-              style={{ minHeight: '48px' }}
-            />
-            {(errors.expirationMonth || errors.expirationYear) && (
-              <p className="text-red-400 text-sm mt-1">{errors.expirationMonth || errors.expirationYear}</p>
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-bold text-zinc-400 mb-2">CVV</label>
-            <div
-              id="cvv"
-              className={`w-full px-3 py-3 bg-zinc-900 border rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-brand-yellow/50 ${errors.cvv ? 'border-red-500' : 'border-zinc-700'}`}
-              style={{ minHeight: '48px' }}
-            />
-            {errors.cvv && (
-              <p className="text-red-400 text-sm mt-1">{errors.cvv}</p>
-            )}
-          </div>
-        </div>
-
-        {/* Postal Code */}
-        <div>
-          <label className="block text-sm font-bold text-zinc-400 mb-2">Postal Code</label>
-          <div
-            id="postal-code"
-            className={`w-full px-4 py-3 bg-zinc-900 border rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-brand-yellow/50 ${errors.postalCode ? 'border-red-500' : 'border-zinc-700'}`}
-            style={{ minHeight: '48px' }}
-          />
-          {errors.postalCode && (
-            <p className="text-red-400 text-sm mt-1">{errors.postalCode}</p>
-          )}
         </div>
 
         {/* Payment Status */}
