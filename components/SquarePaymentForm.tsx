@@ -43,14 +43,14 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
     postalCode: ''
   });
   const [errors, setErrors] = useState<{[key: string]: string}>({});
-  const [paymentMode, setPaymentMode] = useState<'test' | 'live'>('test');
+  const [paymentMode, setPaymentMode] = useState<'test' | 'live'>('live');
   const [squareFields, setSquareFields] = useState<any>(null);
 
   // Environment-based Square configuration
   const SQUARE_CONFIG = {
-    applicationId: import.meta.env.VITE_SQUARE_APPLICATION_ID || 'sandbox-sq0idb-oggrMwUwXBTTDHGC8sZHTQ',
+    applicationId: import.meta.env.VITE_SQUARE_APPLICATION_ID || 'sq0idp-oBleGoboqpllvndrWQ9Zuw',
     locationId: import.meta.env.VITE_SQUARE_LOCATION_ID || 'L14KB0DPJ20SD',
-    environment: (import.meta.env.VITE_SQUARE_ENVIRONMENT || 'sandbox') as 'sandbox' | 'production',
+    environment: (import.meta.env.VITE_SQUARE_ENVIRONMENT || 'production') as 'sandbox' | 'production',
     scriptUrl: import.meta.env.VITE_SQUARE_ENVIRONMENT === 'production'
       ? 'https://web.squarecdn.com/v1/square.js'
       : 'https://sandbox.web.squarecdn.com/v1/square.js'
