@@ -125,7 +125,7 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
             fontSize: '16px'
           },
           'input::placeholder': {
-            color: '#ffffff99'
+            color: 'rgba(255, 255, 255, 0.6)'
           }
         }
       });
