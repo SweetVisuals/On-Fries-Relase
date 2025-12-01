@@ -35,7 +35,6 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
   const [selectedAddons, setSelectedAddons] = useState<{ [key: string]: number }>({});
   const [currentStep, setCurrentStep] = useState(1);
   const [isOrderDetailsCollapsed, setIsOrderDetailsCollapsed] = useState(true);
-  const [scrollTop, setScrollTop] = useState<number | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const prevIsOpen = usePrevious(isOpen);
@@ -83,13 +82,6 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
 
     return () => {
       document.body.style.overflow = '';
-  useEffect(() => {
-    if (scrollTop !== null) {
-      scrollRef.current?.scrollTo(0, scrollTop);
-      setScrollTop(null);
-    }
-  }, [scrollTop]);
-    };
   }, [isOpen]);
 
   if (!isOpen) return null;
@@ -118,7 +110,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
       }
     setScrollTop(scrollRef.current?.scrollTop || 0);
       return newAddons;
-    });
+  setTimeout(() => scrollRef.current?.scrollTo(0, currentScrollTop), 0);    });
   };
 
   const toggleAddon = (addon: string) => {
@@ -139,7 +131,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
         newAddons[addon] = 1;
       }
       return newAddons;
-    });
+  setTimeout(() => scrollRef.current?.scrollTo(0, currentScrollTop), 0);    });
   };
   const confirmCustomization = () => {
     if (customizingItem) {
