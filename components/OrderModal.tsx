@@ -82,7 +82,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
 
     return () => {
       document.body.style.overflow = '';
-  }, [isOpen]);
+  }, [isOpen]););
 
   if (!isOpen) return null;
 
