@@ -156,7 +156,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
     });
   };
 
-  const updateQuantity =  ((index: number, delta: number) => {
+  const updateQuantity = (index: number, delta: number) => {
     setCart(prev => prev.map((item, i) => i === index ? { ...item, quantity: Math.max(0, item.quantity + delta) } : item)
       .filter(item => item.quantity > 0));
   };
