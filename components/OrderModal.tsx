@@ -164,7 +164,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
   const calculateItemTotal = (item: OrderItem) => {
     let itemPrice = item.price;
     let freeSauceAvailable = item.name === 'Kids Meal';
-    if (item.addons) {
+let freeDrinkAvailable = item.name === 'Kids Meal';    if (item.addons) {
       item.addons.forEach(addon => {
         let price = ADDON_PRICES[addon] || 0;
         const isSauce = ['Green Sauce', 'Red Sauce'].includes(addon);
@@ -177,7 +177,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
         if (item.name === 'Kids Meal' && isDrink) {        price = 0;
       }
         itemPrice += price;
-      });
+        freeDrinkAvailable = false;      });
     }
     return itemPrice * item.quantity;
   };
