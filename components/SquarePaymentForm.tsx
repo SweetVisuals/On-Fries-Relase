@@ -44,6 +44,7 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
   });
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [paymentMode, setPaymentMode] = useState<'test' | 'live'>('test');
+  const [squareFields, setSquareFields] = useState<any>(null);
 
   // Environment-based Square configuration
   const SQUARE_CONFIG = {
@@ -90,10 +91,30 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
       });
 
       // Initialize Square Web Payments SDK
-      window.Square.payments(
+      const payments = window.Square.payments(
         activeConfig.applicationId,
         activeConfig.locationId
       );
+
+      // Create hosted card fields
+      const cardNumberField = await payments.cardNumber();
+      const expirationDateField = await payments.expirationDate();
+      const cvvField = await payments.cvv();
+      const postalCodeField = await payments.postalCode();
+
+      // Attach fields to DOM elements
+      await cardNumberField.attach('#card-number');
+      await expirationDateField.attach('#expiration-date');
+      await cvvField.attach('#cvv');
+      await postalCodeField.attach('#postal-code');
+
+      // Store field references for tokenization
+      setSquareFields({
+        cardNumber: cardNumberField,
+        expirationDate: expirationDateField,
+        cvv: cvvField,
+        postalCode: postalCodeField
+      });
 
       setPaymentStatus('');
     } catch (error) {
@@ -103,39 +124,13 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
   };
 
   const validateForm = (): boolean => {
-    const newErrors: {[key: string]: string} = {};
-
-    // Card number validation (basic)
-    if (!cardForm.cardNumber.replace(/\s/g, '') || cardForm.cardNumber.replace(/\s/g, '').length < 16) {
-      newErrors.cardNumber = 'Please enter a valid card number';
+    // With hosted fields, Square handles validation
+    // We just need to check if fields are initialized
+    if (!squareFields) {
+      onError('Payment form not initialized. Please refresh and try again.');
+      return false;
     }
-
-    // Expiration date validation
-    const currentYear = new Date().getFullYear();
-    const currentMonth = new Date().getMonth() + 1;
-    const expMonth = parseInt(cardForm.expirationMonth);
-    const expYear = parseInt(cardForm.expirationYear);
-
-    if (!expMonth || expMonth < 1 || expMonth > 12) {
-      newErrors.expirationMonth = 'Invalid month';
-    }
-
-    if (!expYear || expYear < currentYear || (expYear === currentYear && expMonth < currentMonth)) {
-      newErrors.expirationYear = 'Card has expired';
-    }
-
-    // CVV validation
-    if (!cardForm.cvv || cardForm.cvv.length < 3) {
-      newErrors.cvv = 'Invalid CVV';
-    }
-
-    // Postal code validation (basic)
-    if (!cardForm.postalCode || cardForm.postalCode.length < 3) {
-      newErrors.postalCode = 'Invalid postal code';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return true;
   };
 
   const handleInputChange = (field: keyof CardFormData, value: string) => {
@@ -182,13 +177,27 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
     try {
       let token: string;
 
-      // For now, use simulated tokenization for both modes
-      // TODO: Implement proper Square hosted fields for live payments
-      const tokenResult = await simulateTokenization();
-      if (tokenResult.errors) {
-        throw new Error('Card tokenization failed');
+      if (paymentMode === 'test') {
+        // Test mode: simulate tokenization
+        const tokenResult = await simulateTokenization();
+        if (tokenResult.errors) {
+          throw new Error('Card tokenization failed');
+        }
+        token = tokenResult.token || 'simulated_token_' + Date.now();
+      } else {
+        // Live mode: tokenize with Square hosted fields
+        if (!squareFields) {
+          throw new Error('Payment form not initialized');
+        }
+
+        const tokenResult = await squareFields.cardNumber.tokenize();
+        if (tokenResult.status === 'INVALID') {
+          throw new Error('Invalid card information. Please check your details and try again.');
+        } else if (tokenResult.status === 'FAILURE') {
+          throw new Error('Card tokenization failed. Please try again.');
+        }
+        token = tokenResult.token;
       }
-      token = tokenResult.token || 'simulated_token_' + Date.now();
 
       let paymentResponse;
 
@@ -317,61 +326,35 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
         {/* Card Number */}
         <div>
           <label className="block text-sm font-bold text-zinc-400 mb-2">Card Number</label>
-          <input
-            type="text"
-            placeholder="1234 5678 9012 3456"
-            value={cardForm.cardNumber}
-            onChange={handleCardNumberChange}
+          <div
+            id="card-number"
             className={`w-full px-4 py-3 bg-zinc-900 border rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-brand-yellow/50 ${errors.cardNumber ? 'border-red-500' : 'border-zinc-700'}`}
-            disabled={disabled || isLoading}
+            style={{ minHeight: '48px' }}
           />
           {errors.cardNumber && (
             <p className="text-red-400 text-sm mt-1">{errors.cardNumber}</p>
           )}
         </div>
 
-        {/* Expiration and CVV */}
-        <div className="grid grid-cols-3 gap-3">
+        {/* Expiration Date and CVV */}
+        <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-bold text-zinc-400 mb-2">Month</label>
-            <input
-              type="text"
-              placeholder="MM"
-              maxLength={2}
-              value={cardForm.expirationMonth}
-              onChange={(e) => handleInputChange('expirationMonth', e.target.value)}
-              className={`w-full px-3 py-3 bg-zinc-900 border rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-brand-yellow/50 ${errors.expirationMonth ? 'border-red-500' : 'border-zinc-700'}`}
-              disabled={disabled || isLoading}
+            <label className="block text-sm font-bold text-zinc-400 mb-2">Expiration Date</label>
+            <div
+              id="expiration-date"
+              className={`w-full px-3 py-3 bg-zinc-900 border rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-brand-yellow/50 ${errors.expirationMonth || errors.expirationYear ? 'border-red-500' : 'border-zinc-700'}`}
+              style={{ minHeight: '48px' }}
             />
-            {errors.expirationMonth && (
-              <p className="text-red-400 text-sm mt-1">{errors.expirationMonth}</p>
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-bold text-zinc-400 mb-2">Year</label>
-            <input
-              type="text"
-              placeholder="YYYY"
-              maxLength={4}
-              value={cardForm.expirationYear}
-              onChange={(e) => handleInputChange('expirationYear', e.target.value)}
-              className={`w-full px-3 py-3 bg-zinc-900 border rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-brand-yellow/50 ${errors.expirationYear ? 'border-red-500' : 'border-zinc-700'}`}
-              disabled={disabled || isLoading}
-            />
-            {errors.expirationYear && (
-              <p className="text-red-400 text-sm mt-1">{errors.expirationYear}</p>
+            {(errors.expirationMonth || errors.expirationYear) && (
+              <p className="text-red-400 text-sm mt-1">{errors.expirationMonth || errors.expirationYear}</p>
             )}
           </div>
           <div>
             <label className="block text-sm font-bold text-zinc-400 mb-2">CVV</label>
-            <input
-              type="text"
-              placeholder="123"
-              maxLength={4}
-              value={cardForm.cvv}
-              onChange={(e) => handleInputChange('cvv', e.target.value)}
+            <div
+              id="cvv"
               className={`w-full px-3 py-3 bg-zinc-900 border rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-brand-yellow/50 ${errors.cvv ? 'border-red-500' : 'border-zinc-700'}`}
-              disabled={disabled || isLoading}
+              style={{ minHeight: '48px' }}
             />
             {errors.cvv && (
               <p className="text-red-400 text-sm mt-1">{errors.cvv}</p>
@@ -382,13 +365,10 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
         {/* Postal Code */}
         <div>
           <label className="block text-sm font-bold text-zinc-400 mb-2">Postal Code</label>
-          <input
-            type="text"
-            placeholder="SW1A 1AA"
-            value={cardForm.postalCode}
-            onChange={(e) => handleInputChange('postalCode', e.target.value)}
+          <div
+            id="postal-code"
             className={`w-full px-4 py-3 bg-zinc-900 border rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-brand-yellow/50 ${errors.postalCode ? 'border-red-500' : 'border-zinc-700'}`}
-            disabled={disabled || isLoading}
+            style={{ minHeight: '48px' }}
           />
           {errors.postalCode && (
             <p className="text-red-400 text-sm mt-1">{errors.postalCode}</p>
