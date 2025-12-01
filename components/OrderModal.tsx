@@ -164,7 +164,6 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
   const calculateItemTotal = (item: OrderItem) => {
     let itemPrice = item.price;
     let freeSauceAvailable = item.name === 'Kids Meal';
-let freeDrinkAvailable = item.name === 'Kids Meal';    if (item.addons) {
       item.addons.forEach(addon => {
         let price = ADDON_PRICES[addon] || 0;
         const isSauce = ['Green Sauce', 'Red Sauce'].includes(addon);
@@ -177,7 +176,6 @@ let freeDrinkAvailable = item.name === 'Kids Meal';    if (item.addons) {
         if (item.name === 'Kids Meal' && isDrink) {        price = 0;
       }
         itemPrice += price;
-        freeDrinkAvailable = false;      });
     }
     return itemPrice * item.quantity;
   };
@@ -301,7 +299,7 @@ let freeDrinkAvailable = item.name === 'Kids Meal';    if (item.addons) {
                       {ITEM_ADDONS[customizingItem.name].drinks.map(drink => {
                         const count = selectedAddons[drink] || 0;
                         const isMainItem = customizingItem.category === 'Main';
-                        if (isMainItem || customizingItem.name === 'Kids Meal') {
+                        if (isMainItem) {
                           return (
                             <div key={drink} className={`p-4 rounded-xl border text-left flex justify-between items-center ${count > 0 ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400'}`}>
                               <div>
