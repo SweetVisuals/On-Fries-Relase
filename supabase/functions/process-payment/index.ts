@@ -4,6 +4,13 @@ import { createClient } from 'jsr:@supabase/supabase-js@2'
 
 interface PaymentRequest {
   sourceId?: string
+  cardDetails?: {
+    number: string
+    expirationMonth: string
+    expirationYear: string
+    cvv: string
+    postalCode: string
+  }
   amount: number
   currency: string
   idempotencyKey: string
@@ -20,7 +27,6 @@ Deno.serve(async (req) => {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-client-info, apikey'
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
       }
     })
   }
@@ -36,11 +42,11 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { sourceId, amount, currency, idempotencyKey, isSandbox = false, type = 'payment' }: PaymentRequest = await req.json()
+    const { sourceId, cardDetails, amount, currency, idempotencyKey, isSandbox = false, type = 'payment' }: PaymentRequest = await req.json()
 
     // Validate required fields
-    if (type === 'payment' && !sourceId) {
-      return new Response(JSON.stringify({ error: 'Missing sourceId for payment' }), {
+    if (type === 'payment' && !sourceId && !cardDetails) {
+      return new Response(JSON.stringify({ error: 'Missing sourceId or cardDetails for payment' }), {
         status: 400,
         headers: {
           'Content-Type': 'application/json',
@@ -106,15 +112,39 @@ Deno.serve(async (req) => {
         ? 'https://connect.squareupsandbox.com/v2/payments'
         : 'https://connect.squareup.com/v2/payments'
 
-      requestBody = {
-        source_id: sourceId,
-        idempotency_key: idempotencyKey,
-        amount_money: {
-          amount: Math.round(amount * 100), // Convert to cents
-          currency: currency.toUpperCase()
-        },
-        location_id: locationId,
-        autocomplete: true
+      if (cardDetails) {
+        // Use card details directly (for development/testing - not recommended for production)
+        requestBody = {
+          idempotency_key: idempotencyKey,
+          amount_money: {
+            amount: Math.round(amount * 100), // Convert to cents
+            currency: currency.toUpperCase()
+          },
+          location_id: locationId,
+          source_id: 'cnon:card-nonce-ok', // Required placeholder for card details
+          card_details: {
+            number: cardDetails.number.replace(/\s/g, ''),
+            expiration_month: parseInt(cardDetails.expirationMonth),
+            expiration_year: parseInt(cardDetails.expirationYear),
+            cvv: cardDetails.cvv,
+            billing_address: {
+              postal_code: cardDetails.postalCode
+            }
+          },
+          autocomplete: true
+        }
+      } else {
+        // Use source_id (token)
+        requestBody = {
+          source_id: sourceId,
+          idempotency_key: idempotencyKey,
+          amount_money: {
+            amount: Math.round(amount * 100), // Convert to cents
+            currency: currency.toUpperCase()
+          },
+          location_id: locationId,
+          autocomplete: true
+        }
       }
     }
 

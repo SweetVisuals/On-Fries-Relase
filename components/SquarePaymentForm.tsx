@@ -180,14 +180,15 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
     setPaymentStatus(paymentMode === 'test' ? 'Processing test payment...' : 'Processing payment...');
 
     try {
-      // Tokenize card data
-      const tokenResult = await simulateTokenization();
+      let token: string;
 
+      // For now, use simulated tokenization for both modes
+      // TODO: Implement proper Square hosted fields for live payments
+      const tokenResult = await simulateTokenization();
       if (tokenResult.errors) {
         throw new Error('Card tokenization failed');
       }
-
-      const token = tokenResult.token || 'simulated_token_' + Date.now();
+      token = tokenResult.token || 'simulated_token_' + Date.now();
 
       let paymentResponse;
 
@@ -214,7 +215,13 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
         // Live mode: call Supabase Edge Function for payment processing
         const { data, error } = await supabase.functions.invoke('process-payment', {
           body: {
-            sourceId: token,
+            cardDetails: {
+              number: cardForm.cardNumber,
+              expirationMonth: cardForm.expirationMonth,
+              expirationYear: cardForm.expirationYear,
+              cvv: cardForm.cvv,
+              postalCode: cardForm.postalCode
+            },
             amount: amount,
             currency: 'GBP',
             idempotencyKey: `payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
