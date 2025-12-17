@@ -33,6 +33,8 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
   customerEmail,
   disabled = false
 }) => {
+  console.log('SquarePaymentForm rendered with amount:', amount);
+
   const [isLoading, setIsLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<string>('');
   const [cardForm, setCardForm] = useState<CardFormData>({
