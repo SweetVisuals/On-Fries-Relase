@@ -46,11 +46,15 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
   const [squareFields, setSquareFields] = useState<any>(null);
   const [paymentError, setPaymentError] = useState<string | null>(null);
 
-  // Environment-based Square configuration - Force production for live payments
+  // Environment-based Square configuration
   const SQUARE_CONFIG = {
-    applicationId: 'sq0idp-oBleGoboqpllvndrWQ9Zuw', // CONFIRMED: This matches your Square production app
-    locationId: 'L14KB0DPJ20SD',
-    environment: 'production' as 'production',
+    applicationId: import.meta.env.VITE_SQUARE_ENVIRONMENT === 'production'
+      ? import.meta.env.VITE_SQUARE_PROD_APP_ID
+      : import.meta.env.VITE_SQUARE_SANDBOX_APP_ID,
+    locationId: import.meta.env.VITE_SQUARE_ENVIRONMENT === 'production'
+      ? import.meta.env.VITE_SQUARE_PROD_LOCATION_ID
+      : import.meta.env.VITE_SQUARE_SANDBOX_LOCATION_ID,
+    environment: import.meta.env.VITE_SQUARE_ENVIRONMENT as 'sandbox' | 'production',
     scriptUrl: 'https://web.squarecdn.com/v1/square.js'
   };
   useEffect(() => {
