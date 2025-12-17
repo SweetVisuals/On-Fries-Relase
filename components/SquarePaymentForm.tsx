@@ -47,14 +47,11 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
   const [paymentError, setPaymentError] = useState<string | null>(null);
 
   // Environment-based Square configuration
+  // Temporarily hardcoded to production to bypass environment variable caching
   const SQUARE_CONFIG = {
-    applicationId: import.meta.env.VITE_SQUARE_ENVIRONMENT === 'production'
-      ? import.meta.env.VITE_SQUARE_PROD_APP_ID
-      : import.meta.env.VITE_SQUARE_SANDBOX_APP_ID,
-    locationId: import.meta.env.VITE_SQUARE_ENVIRONMENT === 'production'
-      ? import.meta.env.VITE_SQUARE_PROD_LOCATION_ID
-      : import.meta.env.VITE_SQUARE_SANDBOX_LOCATION_ID,
-    environment: import.meta.env.VITE_SQUARE_ENVIRONMENT as 'sandbox' | 'production',
+    applicationId: 'sq0idp-oBleGoboqpllvndrWQ9Zuw', // Production Application ID
+    locationId: 'L14KB0DPJ20SD', // Production Location ID
+    environment: 'production' as 'sandbox' | 'production',
     scriptUrl: 'https://web.squarecdn.com/v1/square.js'
   };
   useEffect(() => {
