@@ -118,7 +118,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
       />
 
       {/* Drawer */}
-      <div className={`fixed top-0 right-0 h-full w-full md:w-[450px] bg-zinc-950 border-l border-zinc-800 z-50 shadow-2xl transform transition-transform duration-300 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`fixed top-0 right-0 h-full w-full md:w-[400px] bg-zinc-950 border-l border-zinc-800 z-50 shadow-2xl transform transition-transform duration-300 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
 
         {completedOrder ? (
           // Success UI
@@ -218,7 +218,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
           // Standard Cart UI
           <>
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-zinc-800 bg-zinc-900">
+            <div className="flex items-center justify-between p-5 border-b border-zinc-800 bg-zinc-900">
               <div className="flex items-center gap-3">
                 <ShoppingBag className="w-6 h-6 text-brand-yellow" />
                 <h2 className="text-xl font-bold text-white">Your Orders</h2>
@@ -232,7 +232,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
             </div>
 
             {/* Cart Items */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
               {cart.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-zinc-500">
                   <ShoppingBag className="w-16 h-16 mb-4 opacity-20" />

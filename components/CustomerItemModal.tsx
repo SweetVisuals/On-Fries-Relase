@@ -252,77 +252,79 @@ export const CustomerItemModal: React.FC<CustomerItemModalProps> = ({ isOpen, on
           )}
 
           {/* Drinks Section */}
-          <section>
-            <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4">{item.name === 'Kids Meal' ? 'Drink (Required)' : 'Drinks'}</h3>
-            <div className="space-y-3">
-              {item.name === 'Kids Meal' ? (
-                <>
-                  {drinks.map(drink => (
+          {item.category !== 'Drinks' && (
+            <section>
+              <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4">{item.name === 'Kids Meal' ? 'Drink (Required)' : 'Drinks'}</h3>
+              <div className="space-y-3">
+                {item.name === 'Kids Meal' ? (
+                  <>
+                    {drinks.map(drink => (
+                      <div
+                        key={drink.id}
+                        onClick={() => setSelectedDrink(drink.id)}
+                        className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${selectedDrink === drink.id
+                          ? 'bg-brand-yellow/10 border-brand-yellow'
+                          : 'bg-zinc-900/50 border-zinc-800/50 hover:border-zinc-700'
+                          }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${selectedDrink === drink.id ? 'border-brand-yellow' : 'border-zinc-600'
+                            }`}>
+                            {selectedDrink === drink.id && <div className="w-3 h-3 rounded-full bg-brand-yellow" />}
+                          </div>
+                          <span className={`font-bold ${selectedDrink === drink.id ? 'text-white' : 'text-zinc-400'}`}>{drink.name}</span>
+                        </div>
+                        <div className="text-brand-yellow text-xs font-bold">Free</div>
+                      </div>
+                    ))}
+                    {/* None Option */}
                     <div
-                      key={drink.id}
-                      onClick={() => setSelectedDrink(drink.id)}
-                      className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${selectedDrink === drink.id
+                      onClick={() => setSelectedDrink('none')}
+                      className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${selectedDrink === 'none'
                         ? 'bg-brand-yellow/10 border-brand-yellow'
                         : 'bg-zinc-900/50 border-zinc-800/50 hover:border-zinc-700'
                         }`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${selectedDrink === drink.id ? 'border-brand-yellow' : 'border-zinc-600'
+                        <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${selectedDrink === 'none' ? 'border-brand-yellow' : 'border-zinc-600'
                           }`}>
-                          {selectedDrink === drink.id && <div className="w-3 h-3 rounded-full bg-brand-yellow" />}
+                          {selectedDrink === 'none' && <div className="w-3 h-3 rounded-full bg-brand-yellow" />}
                         </div>
-                        <span className={`font-bold ${selectedDrink === drink.id ? 'text-white' : 'text-zinc-400'}`}>{drink.name}</span>
+                        <span className={`font-bold ${selectedDrink === 'none' ? 'text-white' : 'text-zinc-400'}`}>None</span>
                       </div>
                       <div className="text-brand-yellow text-xs font-bold">Free</div>
                     </div>
-                  ))}
-                  {/* None Option */}
-                  <div
-                    onClick={() => setSelectedDrink('none')}
-                    className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${selectedDrink === 'none'
-                      ? 'bg-brand-yellow/10 border-brand-yellow'
-                      : 'bg-zinc-900/50 border-zinc-800/50 hover:border-zinc-700'
-                      }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${selectedDrink === 'none' ? 'border-brand-yellow' : 'border-zinc-600'
-                        }`}>
-                        {selectedDrink === 'none' && <div className="w-3 h-3 rounded-full bg-brand-yellow" />}
+                  </>
+                ) : (
+                  // Standard +/- counters
+                  drinks.map(drink => (
+                    <div key={drink.id} className="flex items-center justify-between p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/50">
+                      <div>
+                        <div className="font-bold text-white">{drink.name}</div>
+                        <div className="text-brand-yellow text-xs font-bold">£{drink.price.toFixed(2)}</div>
                       </div>
-                      <span className={`font-bold ${selectedDrink === 'none' ? 'text-white' : 'text-zinc-400'}`}>None</span>
+                      <div className="flex items-center gap-3 bg-zinc-950 rounded-lg p-1 border border-zinc-800">
+                        <button
+                          onClick={() => updateSelection(drink.id, -1)}
+                          className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${!selections[drink.id] ? 'text-zinc-600 cursor-default' : 'hover:bg-zinc-800 text-zinc-400 hover:text-white'}`}
+                          disabled={!selections[drink.id]}
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <span className="text-sm font-bold w-4 text-center text-white">{selections[drink.id] || 0}</span>
+                        <button
+                          onClick={() => updateSelection(drink.id, 1)}
+                          className="w-8 h-8 flex items-center justify-center hover:bg-zinc-800 rounded text-zinc-400 hover:text-white transition-colors"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                    <div className="text-brand-yellow text-xs font-bold">Free</div>
-                  </div>
-                </>
-              ) : (
-                // Standard +/- counters
-                drinks.map(drink => (
-                  <div key={drink.id} className="flex items-center justify-between p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/50">
-                    <div>
-                      <div className="font-bold text-white">{drink.name}</div>
-                      <div className="text-brand-yellow text-xs font-bold">£{drink.price.toFixed(2)}</div>
-                    </div>
-                    <div className="flex items-center gap-3 bg-zinc-950 rounded-lg p-1 border border-zinc-800">
-                      <button
-                        onClick={() => updateSelection(drink.id, -1)}
-                        className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${!selections[drink.id] ? 'text-zinc-600 cursor-default' : 'hover:bg-zinc-800 text-zinc-400 hover:text-white'}`}
-                        disabled={!selections[drink.id]}
-                      >
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <span className="text-sm font-bold w-4 text-center text-white">{selections[drink.id] || 0}</span>
-                      <button
-                        onClick={() => updateSelection(drink.id, 1)}
-                        className="w-8 h-8 flex items-center justify-center hover:bg-zinc-800 rounded text-zinc-400 hover:text-white transition-colors"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </section>
+                  ))
+                )}
+              </div>
+            </section>
+          )}
         </div>
 
         {/* Footer */}

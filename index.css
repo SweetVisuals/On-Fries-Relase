@@ -32,3 +32,10 @@
   border: none !important;
   padding: 0 !important;
 }
+
+/* Global Zoom for Desktop */
+@media (min-width: 1024px) {
+  html {
+    zoom: 0.9;
+  }
+}
