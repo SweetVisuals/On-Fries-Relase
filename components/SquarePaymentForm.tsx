@@ -60,6 +60,12 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
   useEffect(() => {
     console.log('Initializing Square with config:', SQUARE_CONFIG);
 
+    // Clear any existing card container content
+    const cardContainer = document.getElementById('card-container');
+    if (cardContainer) {
+      cardContainer.innerHTML = '';
+    }
+
     // Load Square Web Payments SDK
     const script = document.createElement('script');
     script.src = SQUARE_CONFIG.scriptUrl;
@@ -98,8 +104,13 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
       if (style.parentNode) {
         document.head.removeChild(style);
       }
+      // Clear card container on cleanup
+      const container = document.getElementById('card-container');
+      if (container) {
+        container.innerHTML = '';
+      }
     };
-  }, []);
+  }, [SQUARE_CONFIG.applicationId, SQUARE_CONFIG.locationId, SQUARE_CONFIG.environment]);
 
   const initializeSquare = async (config?: typeof SQUARE_CONFIG) => {
     try {
