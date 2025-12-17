@@ -76,20 +76,46 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
     // Add CSS for Square hosted fields - more comprehensive styling
     const style = document.createElement('style');
     style.textContent = `
+      /* Container styling */
+      #card-container {
+        background-color: rgb(39 39 42) !important;
+        border: 1px solid rgb(63 63 70) !important;
+        border-radius: 8px !important;
+      }
+
+      /* iframe styling - limited but worth trying */
       #card-container iframe {
         color-scheme: dark !important;
-      }
-      /* Square hosted field styling - these may not penetrate iframe but worth trying */
-      .sq-input {
-        color: white !important;
         background-color: transparent !important;
       }
-      .sq-input::placeholder {
+
+      /* Square hosted field styling - these may not penetrate iframe but worth trying */
+      .sq-input, .sq-input * {
+        color: #ffffff !important;
+        background-color: transparent !important;
+        border: none !important;
+        outline: none !important;
+      }
+
+      .sq-input::placeholder, .sq-input *:placeholder {
         color: rgba(255, 255, 255, 0.6) !important;
       }
+
       /* Additional styling for better dark theme support */
-      .sq-card-number, .sq-expiration-date, .sq-cvv, .sq-postal-code {
-        color: white !important;
+      .sq-card-number, .sq-expiration-date, .sq-cvv, .sq-postal-code,
+      .sq-card-number *, .sq-expiration-date *, .sq-cvv *, .sq-postal-code * {
+        color: #ffffff !important;
+        background-color: transparent !important;
+      }
+
+      /* Try to style the iframe content */
+      #card-container iframe::-webkit-input-placeholder {
+        color: rgba(255, 255, 255, 0.6) !important;
+      }
+
+      #card-container iframe input {
+        color: #ffffff !important;
+        background-color: transparent !important;
       }
     `;
     document.head.appendChild(style);
@@ -134,10 +160,19 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
         style: {
           input: {
             color: '#ffffff',
-            fontSize: '16px'
+            fontSize: '16px',
+            fontFamily: 'system-ui, -apple-system, sans-serif',
+            backgroundColor: 'transparent'
           },
           'input::placeholder': {
             color: 'rgba(255, 255, 255, 0.6)'
+          },
+          '.sq-input': {
+            color: '#ffffff !important',
+            backgroundColor: 'transparent !important'
+          },
+          '.sq-input::placeholder': {
+            color: 'rgba(255, 255, 255, 0.6) !important'
           }
         }
       });
