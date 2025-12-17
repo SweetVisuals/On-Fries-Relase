@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Loader2, CreditCard, Lock, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -48,12 +48,12 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
 
   // Environment-based Square configuration
   // Temporarily hardcoded to production to bypass environment variable caching
-  const SQUARE_CONFIG = {
+  const SQUARE_CONFIG = useMemo(() => ({
     applicationId: 'sq0idp-oBleGoboqpllvndrWQ9Zuw', // Production Application ID
     locationId: 'L14KB0DPJ20SD', // Production Location ID
     environment: 'production' as 'sandbox' | 'production',
     scriptUrl: 'https://web.squarecdn.com/v1/square.js'
-  };
+  }), []);
   useEffect(() => {
     console.log('Initializing Square with config:', SQUARE_CONFIG);
 
@@ -133,7 +133,7 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
         container.innerHTML = '';
       }
     };
-  }, [SQUARE_CONFIG.applicationId, SQUARE_CONFIG.locationId, SQUARE_CONFIG.environment]);
+  }, []); // SQUARE_CONFIG is memoized, so this only runs once
 
   const initializeSquare = async (config?: typeof SQUARE_CONFIG) => {
     try {
