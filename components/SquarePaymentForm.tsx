@@ -73,49 +73,14 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
     };
     document.body.appendChild(script);
 
-    // Add CSS for Square hosted fields - more comprehensive styling
+    // Minimal CSS for container only - Square handles iframe styling internally
     const style = document.createElement('style');
     style.textContent = `
-      /* Container styling */
+      /* Container styling only */
       #card-container {
         background-color: rgb(39 39 42) !important;
         border: 1px solid rgb(63 63 70) !important;
         border-radius: 8px !important;
-      }
-
-      /* iframe styling - limited but worth trying */
-      #card-container iframe {
-        color-scheme: dark !important;
-        background-color: transparent !important;
-      }
-
-      /* Square hosted field styling - these may not penetrate iframe but worth trying */
-      .sq-input, .sq-input * {
-        color: #ffffff !important;
-        background-color: transparent !important;
-        border: none !important;
-        outline: none !important;
-      }
-
-      .sq-input::placeholder, .sq-input *:placeholder {
-        color: rgba(255, 255, 255, 0.6) !important;
-      }
-
-      /* Additional styling for better dark theme support */
-      .sq-card-number, .sq-expiration-date, .sq-cvv, .sq-postal-code,
-      .sq-card-number *, .sq-expiration-date *, .sq-cvv *, .sq-postal-code * {
-        color: #ffffff !important;
-        background-color: transparent !important;
-      }
-
-      /* Try to style the iframe content */
-      #card-container iframe::-webkit-input-placeholder {
-        color: rgba(255, 255, 255, 0.6) !important;
-      }
-
-      #card-container iframe input {
-        color: #ffffff !important;
-        background-color: transparent !important;
       }
     `;
     document.head.appendChild(style);
