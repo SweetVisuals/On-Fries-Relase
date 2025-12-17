@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useMemo, useEffect } from '
 import { supabase } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
 import type { MenuItem, StockItem, OrderItem, Order, Customer, Supplier, StockSignature, StoreContextType, StoreSettings } from '../types';
+import { MOCK_MENU } from '../constants';
 
 // Mock data
 const MOCK_STOCK: StockItem[] = [
@@ -10,9 +11,12 @@ const MOCK_STOCK: StockItem[] = [
 ];
 
 const MENU_STOCK_REQUIREMENTS: Record<string, string[]> = {
-  'Deluxe Steak': ['Steaks'],
-  'Steak & Fries': ['Steaks'],
+  'Deluxe Steak & Fries': ['Steaks', 'Fries'],
+  'Steak & Fries': ['Steaks', 'Fries'],
   'Steak Only': ['Steaks'],
+  'Signature Fries': ['Fries'],
+  'Kids Meal': ['Steaks', 'Fries'],
+  'Kids Fries': ['Fries'],
   'Short Rib': ['Short Rib'],
   'Lamb': ['Lamb'],
   'Coke': ['Coke'],
@@ -140,27 +144,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, []);
 
-  // Fetch menu from database
+  // Always use mock data for now to debug filtering
   useEffect(() => {
-    const fetchMenu = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('menu_items')
-          .select('*')
-          .order('display_order', { ascending: true });
-
-        if (error) {
-          console.error('Error fetching menu:', error);
-          return;
-        }
-
-        setMenu(data || []);
-      } catch (error) {
-        console.error('Error fetching menu:', error);
-      }
-    };
-
-    fetchMenu();
+    console.log('Using MOCK_MENU for debugging');
+    setMenu(MOCK_MENU);
   }, []);
 
   // Fetch stock from database
@@ -322,18 +309,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     fetchSuppliers();
   }, []);
 
-  // Filtered menu based on stock availability
+  // Filtered menu - temporarily disable stock filtering for debugging
   const filteredMenu = useMemo(() => {
-    return menu.filter(item => {
-      const requirements = MENU_STOCK_REQUIREMENTS[item.name];
-      if (!requirements) return true;
-
-      return requirements.every(stockName => {
-        const stockItem = stock.find(s => s.name === stockName);
-        return stockItem && stockItem.quantity > 0;
-      });
-    });
-  }, [menu, stock]);
+    console.log('Menu items (no stock filtering):', menu.map(m => ({ name: m.name, category: m.category })));
+    return menu; // Return all menu items without stock filtering
+  }, [menu]);
 
   const addToCart = (item: OrderItem) => {
     setCart(prev => [...prev, item]);

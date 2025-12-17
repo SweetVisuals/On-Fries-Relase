@@ -9,6 +9,11 @@ export interface MenuItem {
   is_available: boolean;
   prep_time_minutes?: string;
   time?: string;
+  preparation_time?: number;
+  display_order?: number;
+  stock_requirements?: any;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface OrderItem {

@@ -16,6 +16,9 @@ export const MenuPage = () => {
     const matchesCategory = activeCategory === 'all' || item.category === activeCategory;
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
 
+    // Debug logging
+    console.log('Filtering item:', item.name, 'category:', item.category, 'activeCategory:', activeCategory, 'matchesCategory:', matchesCategory);
+
     // Only show these items in the main menu grid
     const validItems = [
       'Deluxe Steak & Fries',
