@@ -59,7 +59,30 @@ async function createAdminAccount() {
 
     if (error) {
       if (error.message.includes('already been registered') || error.code === 'email_exists') {
-        console.log('Admin account already exists!');
+        console.log('Admin account already exists. Updating password...');
+
+        // Is there a way to look up user by email? listUsers
+        const { data: users, error: listError } = await supabase.auth.admin.listUsers();
+        if (listError) {
+          console.error('Error listing users:', listError);
+        } else {
+          const adminUser = users.users.find(u => u.email === 'admin@admin.local');
+          if (adminUser) {
+            const { error: updateError } = await supabase.auth.admin.updateUserById(adminUser.id, {
+              password: 'admin123',
+              email_confirm: true,
+              user_metadata: { role: 'admin' }
+            });
+            if (updateError) {
+              console.error('Error resetting admin password:', updateError);
+            } else {
+              console.log('Admin password reset to: admin123');
+            }
+          } else {
+            console.error('Could not find admin user in list to update.');
+          }
+        }
+
         console.log('Username: admin (or email: admin@admin.local)');
         console.log('Password: admin123');
         console.log('You can proceed with login.');
