@@ -13,8 +13,16 @@ interface SquarePaymentFormProps {
   onSuccess: (payment: any) => void;
   onError: (error: string) => void;
   orderReference?: string;
+  orderReference?: string;
   customerEmail?: string;
+  customerName?: string;
   disabled?: boolean;
+}
+
+interface UserDetails {
+  givenName: string;
+  familyName: string;
+  email: string;
 }
 
 interface CardFormData {
@@ -30,7 +38,9 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
   onSuccess,
   onError,
   orderReference,
+  orderReference,
   customerEmail,
+  customerName,
   disabled = false
 }) => {
   console.log('SquarePaymentForm rendered with amount:', amount);
@@ -44,7 +54,7 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
     cvv: '',
     postalCode: ''
   });
-  const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [squareFields, setSquareFields] = useState<any>(null);
   const [paymentError, setPaymentError] = useState<string | null>(null);
 
@@ -187,10 +197,43 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
       }
       const token = tokenResult.token;
 
+      // START SCA: Verify the buyer
+      let verificationToken = undefined;
+
+      try {
+        const verificationDetails = {
+          amount: amount.toString(),
+          billingContact: {
+            givenName: customerName || 'Guest',
+            familyName: 'User',
+            email: customerEmail || 'guest@example.com',
+          },
+          currencyCode: 'GBP',
+          intent: 'CHARGE',
+        };
+
+        const verificationResult = await squareFields.card.verifyBuyer(
+          token,
+          verificationDetails
+        );
+
+        if (verificationResult.token) {
+          verificationToken = verificationResult.token;
+        } else {
+          // Not all cards require verification, but if it fails to produce a token when required, it might error later.
+          console.log('No verification token produced (might not be required for this card/region)');
+        }
+      } catch (verifyError) {
+        console.error('SCA Verification failed:', verifyError);
+        // Often better to fail here than let the backend fail with a less clear error
+        throw new Error('Card verification failed. Please try again.');
+      }
+
       // Call Supabase Edge Function for payment processing
       const { data, error } = await supabase.functions.invoke('process-payment', {
         body: {
           sourceId: token,
+          verificationToken: verificationToken,
           amount: amount,
           currency: 'GBP',
           idempotencyKey: `payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`

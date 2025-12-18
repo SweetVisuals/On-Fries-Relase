@@ -23,6 +23,8 @@ interface PaymentRequest {
     cvv: string
     postalCode: string
   }
+  token?: string
+  verificationToken?: string
   amount: number
   currency: string
   idempotencyKey: string
@@ -53,11 +55,14 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { sourceId, cardDetails, amount, currency, idempotencyKey, type = 'payment' }: PaymentRequest = await req.json()
+    const { sourceId, token, verificationToken, cardDetails, amount, currency, idempotencyKey, type = 'payment' }: PaymentRequest = await req.json()
+
+    // Normalize sourceId from either sourceId or token
+    const actualSourceId = sourceId || token;
 
     // Validate required fields
-    if (type === 'payment' && !sourceId && !cardDetails) {
-      return new Response(JSON.stringify({ success: false, error: 'Missing sourceId or cardDetails for payment' }), {
+    if (type === 'payment' && !actualSourceId && !cardDetails) {
+      return new Response(JSON.stringify({ success: false, error: 'Missing sourceId/token or cardDetails for payment' }), {
         status: 200,
         headers: {
           'Content-Type': 'application/json',
@@ -138,7 +143,8 @@ Deno.serve(async (req) => {
       } else {
         // Use source_id (token)
         requestBody = {
-          source_id: sourceId,
+          source_id: actualSourceId,
+          verification_token: verificationToken,
           idempotency_key: idempotencyKey,
           amount_money: {
             amount: Math.round(amount * 100), // Convert to cents
