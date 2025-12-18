@@ -43,8 +43,8 @@ Deno.serve(async (req) => {
   }
 
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
+    return new Response(JSON.stringify({ success: false, error: 'Method not allowed' }), {
+      status: 200,
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
@@ -57,8 +57,8 @@ Deno.serve(async (req) => {
 
     // Validate required fields
     if (type === 'payment' && !sourceId && !cardDetails) {
-      return new Response(JSON.stringify({ error: 'Missing sourceId or cardDetails for payment' }), {
-        status: 400,
+      return new Response(JSON.stringify({ success: false, error: 'Missing sourceId or cardDetails for payment' }), {
+        status: 200,
         headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*'
@@ -66,8 +66,8 @@ Deno.serve(async (req) => {
       })
     }
     if (!amount || !currency || !idempotencyKey) {
-      return new Response(JSON.stringify({ error: 'Missing required fields' }), {
-        status: 400,
+      return new Response(JSON.stringify({ success: false, error: 'Missing required fields' }), {
+        status: 200,
         headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*'
@@ -80,8 +80,8 @@ Deno.serve(async (req) => {
     const locationId = Deno.env.get('SQUARE_PRODUCTION_LOCATION_ID')
 
     if (!accessToken || !locationId) {
-      return new Response(JSON.stringify({ error: 'Square configuration missing' }), {
-        status: 500,
+      return new Response(JSON.stringify({ success: false, error: 'Square configuration missing' }), {
+        status: 200,
         headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*'
@@ -200,10 +200,11 @@ Deno.serve(async (req) => {
       }
 
       return new Response(JSON.stringify({
+        success: false,
         error: userFriendlyMessage,
         details: result
       }), {
-        status: response.status,
+        status: 200,
         headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*'
@@ -236,10 +237,11 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Payment processing error:', error)
     return new Response(JSON.stringify({
+      success: false,
       error: 'Internal server error',
       details: error.message
     }), {
-      status: 500,
+      status: 200,
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
