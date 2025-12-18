@@ -149,7 +149,8 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
 
       // Store card reference for tokenization
       setSquareFields({
-        card: card
+        card: card,
+        payments: payments
       });
 
       setPaymentStatus('');
@@ -210,7 +211,7 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
           intent: 'CHARGE',
         };
 
-        const verificationResult = await squareFields.card.verifyBuyer(
+        const verificationResult = await squareFields.payments.verifyBuyer(
           token,
           verificationDetails
         );
