@@ -13,7 +13,6 @@ interface SquarePaymentFormProps {
   onSuccess: (payment: any) => void;
   onError: (error: string) => void;
   orderReference?: string;
-  orderReference?: string;
   customerEmail?: string;
   customerName?: string;
   disabled?: boolean;
@@ -37,7 +36,6 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
   amount,
   onSuccess,
   onError,
-  orderReference,
   orderReference,
   customerEmail,
   customerName,
