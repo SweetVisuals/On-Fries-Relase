@@ -39,3 +39,18 @@
     zoom: 0.9;
   }
 }
+
+/* Scrollbar Utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Square Card Container Text Color Override - Force White */
+#card-container * {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}

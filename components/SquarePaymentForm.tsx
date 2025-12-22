@@ -257,7 +257,12 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
       const errorMessage = error.message || 'Payment failed. Please try again.';
       setPaymentStatus('');
       setPaymentError(errorMessage);
-      onError(errorMessage);
+      // IMPORTANT: We do NOT call onError(errorMessage) here for payment declines
+      // because that would close the parent internal modal/drawer.
+      // We only want to show the error LOCALLY so the user can retry.
+      if (errorMessage.includes('initialize') || errorMessage.includes('SDK')) {
+        onError(errorMessage); // Only close for fatal setup errors
+      }
     } finally {
       setIsLoading(false);
     }
@@ -265,7 +270,7 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
 
 
   return (
-    <div className="w-full max-w-md mx-auto">
+    <div className="w-full max-w-md mx-auto text-white">
       <div className="flex items-center gap-2 mb-6">
         <CreditCard className="w-5 h-5 text-brand-yellow" />
         <h3 className="text-lg font-semibold text-white">Payment Details</h3>
@@ -285,6 +290,8 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
             style={{ minHeight: '48px' }}
           />
         </div>
+
+        {/* Postal Code helper if needed (Square handles it inside iframe usually, but we ensure container expects white text) */}
 
         {/* Payment Error */}
         {paymentError && (

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { AdminLayout } from '../../components/AdminLayout';
 import { useStore } from '../../context/StoreContext';
-import { Search, CheckCircle2, XCircle, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, CheckCircle2, XCircle, Calendar, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 
 export const PastOrdersPage = () => {
-  const { orders } = useStore();
+  const { orders, deleteOrder } = useStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
@@ -42,8 +42,8 @@ export const PastOrdersPage = () => {
           />
         </div>
 
-        {/* Table */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-sm">
+        {/* Desktop Table View (Hidden on mobile) */}
+        <div className="hidden md:block bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -56,12 +56,13 @@ export const PastOrdersPage = () => {
                   <th className="p-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">Order Time</th>
                   <th className="p-4 text-xs font-bold text-zinc-500 uppercase tracking-wider">Status</th>
                   <th className="p-4 text-xs font-bold text-zinc-500 uppercase tracking-wider text-right">Items</th>
+                  <th className="p-4 text-xs font-bold text-zinc-500 uppercase tracking-wider text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-800">
                 {pastOrders.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="p-8 text-center text-zinc-500">No past orders found.</td>
+                    <td colSpan={9} className="p-8 text-center text-zinc-500">No past orders found.</td>
                   </tr>
                 ) : (
                   pastOrders.map(order => (
@@ -102,10 +103,18 @@ export const PastOrdersPage = () => {
                         <td className="p-4 text-right text-sm text-zinc-400">
                           {order.items.length} items
                         </td>
+                        <td className="p-4 text-right">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); if (confirm('Delete order?')) deleteOrder(order.id); }}
+                            className="p-1 hover:bg-zinc-800 rounded text-zinc-500 hover:text-red-400 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
                       </tr>
                       {expandedOrder === order.id && (
                         <tr className="bg-black/20">
-                          <td colSpan={8} className="p-0">
+                          <td colSpan={9} className="p-0">
                             <div className="p-4 pl-16 bg-zinc-950/30 border-t border-zinc-800/50 shadow-inner">
                               <h4 className="text-xs font-bold text-zinc-500 uppercase mb-2 tracking-wider">Order Items</h4>
                               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -129,6 +138,62 @@ export const PastOrdersPage = () => {
               </tbody>
             </table>
           </div>
+        </div>
+
+        {/* Mobile View (Cards) */}
+        <div className="md:hidden space-y-4">
+          {pastOrders.length === 0 ? (
+            <div className="text-center py-10 text-zinc-500 bg-zinc-900/50 border border-zinc-800 rounded-xl">No past orders.</div>
+          ) : (
+            pastOrders.map(order => (
+              <div key={order.id} className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+                <div className="p-4 border-b border-zinc-800 bg-zinc-800/30 flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-bold text-white">{order.displayId || `#${order.id.slice(0, 5)}`}</span>
+                      <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded border ${order.status === 'delivered' ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'
+                        }`}>
+                        {order.status}
+                      </span>
+                    </div>
+                    <div className="text-sm text-zinc-400">{order.customerName}</div>
+                  </div>
+                  <button
+                    onClick={() => { if (confirm('Delete order?')) deleteOrder(order.id); }}
+                    className="p-2 bg-zinc-800 rounded-lg text-zinc-500 hover:text-red-400"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="p-4 space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-zinc-500">Date</span>
+                    <span className="text-white">{new Date(order.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-zinc-500">Total</span>
+                    <span className="text-white font-bold">£{order.total.toFixed(2)}</span>
+                  </div>
+                  <div className="pt-2 border-t border-zinc-800/50">
+                    <button onClick={() => toggleExpand(order.id)} className="w-full text-xs text-zinc-400 flex items-center justify-center gap-1 py-1 hover:text-white">
+                      {expandedOrder === order.id ? 'Hide Items' : `View ${order.items.length} Items`}
+                      {expandedOrder === order.id ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                    </button>
+                  </div>
+                  {expandedOrder === order.id && (
+                    <div className="space-y-2 pt-2 animate-fade-in">
+                      {order.items.map((item, idx) => (
+                        <div key={idx} className="flex justify-between text-sm">
+                          <span className="text-zinc-300">{item.quantity}x {item.name}</span>
+                          <span className="text-zinc-500">£{(item.price * item.quantity).toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </AdminLayout>
