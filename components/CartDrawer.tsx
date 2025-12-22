@@ -11,7 +11,7 @@ interface CartDrawerProps {
 }
 
 export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
-  const { cart, removeFromCart, clearCart, addOrder, settings, user } = useStore();
+  const { cart, removeFromCart, clearCart, addOrder, settings, user, averageOrderTime } = useStore();
   const [isProcessing, setIsProcessing] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
@@ -199,7 +199,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                 <div className="text-left">
                   <p className="font-bold text-white text-sm">Estimated Delivery</p>
                   <p className="text-blue-200 text-sm">{completedOrder.estimatedTime}</p>
-                  <p className="text-blue-400 text-xs mt-0.5">(Approximately 30 minutes)</p>
+                  <p className="text-blue-400 text-xs mt-0.5">(Approximately {averageOrderTime} minutes)</p>
                 </div>
               </div>
             </div>
@@ -279,7 +279,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                 <>
                   <div className="flex justify-between items-end mb-6">
                     <span className="text-zinc-400 font-bold text-lg">Total:</span>
-                    <span className="text-3xl font-bold text-brand-yellow">£{total.toFixed(2)}</span>
+                    <div className="text-right">
+                      <span className="text-3xl font-bold text-brand-yellow">£{total.toFixed(2)}</span>
+                      <p className="text-zinc-500 text-xs mt-1">~{averageOrderTime} min wait</p>
+                    </div>
                   </div>
 
                   <div className="space-y-3">

@@ -65,7 +65,7 @@ export const MenuPage = () => {
             <button
               key={cat.id}
               onClick={() => setActiveCategory(cat.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors border ${activeCategory === cat.id
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors border ${activeCategory === cat.id
                 ? 'bg-brand-yellow text-black border-brand-yellow'
                 : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-700'
                 }`}
