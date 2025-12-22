@@ -35,9 +35,12 @@ export const ProfilePage = () => {
         return;
       }
 
+      console.log('Attempting signUp with:', email);
       const { error } = await signUp(email, password);
+      console.log('signUp result error:', error);
 
       if (error) {
+        console.error('Full signUp error object:', error);
         setError(error);
       } else {
         setSignUpSuccess(true);
@@ -47,9 +50,12 @@ export const ProfilePage = () => {
       const normalizedEmail = email.trim().toLowerCase();
       const loginEmail = normalizedEmail === 'admin' ? 'admin@admin.local' : normalizedEmail;
 
+      console.log('Attempting signIn with:', loginEmail);
       const { error } = await signIn(loginEmail, password);
+      console.log('signIn result error:', error);
 
       if (error) {
+        console.error('Full signIn error object:', error);
         setError(error);
       } else {
         // Redirect based on user role
