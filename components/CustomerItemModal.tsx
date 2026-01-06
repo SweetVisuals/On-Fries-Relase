@@ -21,12 +21,24 @@ export const CustomerItemModal: React.FC<CustomerItemModalProps> = ({ isOpen, on
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && item) {
       setSelectedDrink(null);
       setSelectedSauce(null);
       setQuantity(1);
       setSelections({});
-      setExpandedItems({});
+
+      // Auto-expand allergens by default
+      const initialExpanded: Record<string, 'allergens' | 'dietary' | null> = {};
+      const rawAddons = ITEM_ADDONS[item.name] || { extras: [], sauces: [], drinks: [] };
+      const allAddons = [...(rawAddons.extras || []), ...(rawAddons.sauces || []), ...(rawAddons.drinks || [])];
+
+      allAddons.forEach(name => {
+        if (ADDON_INFO[name]?.allergens?.length > 0) {
+          initialExpanded[name] = 'allergens';
+        }
+      });
+
+      setExpandedItems(initialExpanded);
     }
   }, [isOpen, item]);
 
