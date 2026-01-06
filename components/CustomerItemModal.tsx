@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { X, Plus, Minus, ShoppingBag, Info } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { MenuItem, OrderItem } from '../types';
-import { ITEM_ADDONS, ADDON_PRICES, ADDON_INFO } from '../constants';
+import { ITEM_ADDONS, ADDON_INFO } from '../constants';
 
 interface CustomerItemModalProps {
   isOpen: boolean;
@@ -11,10 +11,10 @@ interface CustomerItemModalProps {
 }
 
 export const CustomerItemModal: React.FC<CustomerItemModalProps> = ({ isOpen, onClose, item }) => {
-  const { addToCart, settings } = useStore();
+  const { addToCart, settings, addonPrices } = useStore();
   const [quantity, setQuantity] = useState(1);
   const [selections, setSelections] = useState<Record<string, number>>({});
-  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+  const [expandedItems, setExpandedItems] = useState<Record<string, 'allergens' | 'dietary' | null>>({});
   // Keeping these for Kids Meal specific logic which might need single selection
   const [selectedDrink, setSelectedDrink] = useState<string | null>(null);
   const [selectedSauce, setSelectedSauce] = useState<string | null>(null);
@@ -48,11 +48,11 @@ export const CustomerItemModal: React.FC<CustomerItemModalProps> = ({ isOpen, on
   const isMainItem = item.category === 'Main';
 
 
-  const toggleExpaded = (e: React.MouseEvent, name: string) => {
+  const toggleExpaded = (e: React.MouseEvent, name: string, type: 'allergens' | 'dietary') => {
     e.stopPropagation();
     setExpandedItems(prev => ({
       ...prev,
-      [name]: !prev[name]
+      [name]: prev[name] === type ? null : type
     }));
   };
 
@@ -64,8 +64,8 @@ export const CustomerItemModal: React.FC<CustomerItemModalProps> = ({ isOpen, on
       <div className="flex gap-1.5 shrink-0">
         {isVeganOrVeg && (
           <button
-            onClick={(e) => toggleExpaded(e, name)}
-            className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors border ${expandedItems[name]
+            onClick={(e) => toggleExpaded(e, name, 'dietary')}
+            className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors border ${expandedItems[name] === 'dietary'
               ? 'bg-green-500/20 text-green-500 border-green-500/40'
               : 'bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500/20'
               }`}
@@ -76,8 +76,8 @@ export const CustomerItemModal: React.FC<CustomerItemModalProps> = ({ isOpen, on
         )}
         {hasAllergens && (
           <button
-            onClick={(e) => toggleExpaded(e, name)}
-            className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors border ${expandedItems[name]
+            onClick={(e) => toggleExpaded(e, name, 'allergens')}
+            className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors border ${expandedItems[name] === 'allergens'
               ? 'bg-red-500/20 text-red-500 border-red-500/40'
               : 'bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20'
               }`}
@@ -121,7 +121,7 @@ export const CustomerItemModal: React.FC<CustomerItemModalProps> = ({ isOpen, on
 
     // Add addons cost
     Object.entries(selections).forEach(([name, qty]) => {
-      const price = ADDON_PRICES[name] || 0;
+      const price = addonPrices[name] || 0;
       const count = qty as number;
       // Check for free logic (Kids Meal specific)
       let effectivePrice = price;
@@ -159,10 +159,10 @@ export const CustomerItemModal: React.FC<CustomerItemModalProps> = ({ isOpen, on
     } else {
       // If we used the radio logic for non-Kids Meal (unlikely given Admin logic, but just in case)
       if (selectedDrink && selectedDrink !== 'none') {
-        total += (ADDON_PRICES[selectedDrink] || 0) * quantity;
+        total += (addonPrices[selectedDrink] || 0) * quantity;
       }
       if (selectedSauce) {
-        total += (ADDON_PRICES[selectedSauce] || 0) * quantity;
+        total += (addonPrices[selectedSauce] || 0) * quantity;
       }
     }
 
@@ -174,7 +174,7 @@ export const CustomerItemModal: React.FC<CustomerItemModalProps> = ({ isOpen, on
 
     // Add addons cost per unit
     Object.entries(selections).forEach(([name, qty]) => {
-      const price = ADDON_PRICES[name] || 0;
+      const price = addonPrices[name] || 0;
       const count = qty as number;
       // For standard items (Main), we multiply by addon qty inside the item qty
       // Wait, `selections` tracks TOTAL addons for the single item being customized?
@@ -239,14 +239,14 @@ export const CustomerItemModal: React.FC<CustomerItemModalProps> = ({ isOpen, on
           <div className="text-brand-yellow text-xs font-bold">+£{price.toFixed(2)}</div>
 
           {/* Expanded Info */}
-          {isExpanded && (info?.allergens || info?.dietary) && (
+          {isExpanded && (
             <div className="mt-2 text-xs p-2 bg-black/20 rounded border border-white/5 animate-fade-in space-y-1 cursor-default" onClick={e => e.stopPropagation()}>
-              {info?.allergens?.length > 0 && (
+              {expandedItems[name] === 'allergens' && info?.allergens?.length > 0 && (
                 <div>
                   <span className="text-red-400 font-bold">Contains:</span> <span className="text-zinc-400">{info.allergens.join(', ')}</span>
                 </div>
               )}
-              {info?.dietary?.length > 0 && (
+              {expandedItems[name] === 'dietary' && info?.dietary?.length > 0 && (
                 <div>
                   <span className="text-green-400 font-bold">Dietary:</span> <span className="text-zinc-400">{info.dietary.join(', ')}</span>
                 </div>
@@ -289,14 +289,14 @@ export const CustomerItemModal: React.FC<CustomerItemModalProps> = ({ isOpen, on
           {isFree && <div className="text-xs font-bold text-zinc-500 uppercase mt-1">Free</div>}
 
           {/* Expanded Info */}
-          {isExpanded && (info?.allergens || info?.dietary) && (
+          {isExpanded && (
             <div className="mt-2 text-xs p-2 bg-black/20 rounded border border-white/5 animate-fade-in space-y-1 cursor-default" onClick={e => e.stopPropagation()}>
-              {info?.allergens?.length > 0 && (
+              {expandedItems[name] === 'allergens' && info?.allergens?.length > 0 && (
                 <div>
                   <span className="text-red-400 font-bold">Contains:</span> <span className="text-zinc-400">{info.allergens.join(', ')}</span>
                 </div>
               )}
-              {info?.dietary?.length > 0 && (
+              {expandedItems[name] === 'dietary' && info?.dietary?.length > 0 && (
                 <div>
                   <span className="text-green-400 font-bold">Dietary:</span> <span className="text-zinc-400">{info.dietary.join(', ')}</span>
                 </div>
@@ -342,7 +342,7 @@ export const CustomerItemModal: React.FC<CustomerItemModalProps> = ({ isOpen, on
             <section>
               <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4">Extras</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {itemAddons.extras.map(extra => renderCounter(extra, ADDON_PRICES[extra] || 0))}
+                {itemAddons.extras.map(extra => renderCounter(extra, addonPrices[extra] || 0))}
               </div>
             </section>
           )}
@@ -378,14 +378,14 @@ export const CustomerItemModal: React.FC<CustomerItemModalProps> = ({ isOpen, on
                           </div>
 
                           {/* Expanded Info */}
-                          {isExpanded && (info?.allergens || info?.dietary) && (
+                          {isExpanded && (
                             <div className="mt-2 text-xs p-2 bg-black/20 rounded border border-white/5 animate-fade-in space-y-1 cursor-default" onClick={e => e.stopPropagation()}>
-                              {info?.allergens?.length > 0 && (
+                              {expandedItems[sauce] === 'allergens' && info?.allergens?.length > 0 && (
                                 <div>
                                   <span className="text-red-400 font-bold">Contains:</span> <span className="text-zinc-400">{info.allergens.join(', ')}</span>
                                 </div>
                               )}
-                              {info?.dietary?.length > 0 && (
+                              {expandedItems[sauce] === 'dietary' && info?.dietary?.length > 0 && (
                                 <div>
                                   <span className="text-green-400 font-bold">Dietary:</span> <span className="text-zinc-400">{info.dietary.join(', ')}</span>
                                 </div>
@@ -403,10 +403,10 @@ export const CustomerItemModal: React.FC<CustomerItemModalProps> = ({ isOpen, on
                   })
                 ) : isMainItem ? (
                   // Counters for Main items
-                  itemAddons.sauces.map(sauce => renderCounter(sauce, ADDON_PRICES[sauce] || 0))
+                  itemAddons.sauces.map(sauce => renderCounter(sauce, addonPrices[sauce] || 0))
                 ) : (
                   // Toggles for others (though currently logic defaults everything else to toggles if not main? Admin logic supports toggles for non-main)
-                  itemAddons.sauces.map(sauce => renderToggle(sauce, ADDON_PRICES[sauce] || 0, false))
+                  itemAddons.sauces.map(sauce => renderToggle(sauce, addonPrices[sauce] || 0, false))
                 )}
               </div>
             </section>
@@ -458,10 +458,10 @@ export const CustomerItemModal: React.FC<CustomerItemModalProps> = ({ isOpen, on
                   </>
                 ) : isMainItem ? (
                   // Counters for Main items
-                  itemAddons.drinks.map(drink => renderCounter(drink, ADDON_PRICES[drink] || 0))
+                  itemAddons.drinks.map(drink => renderCounter(drink, addonPrices[drink] || 0))
                 ) : (
                   // Toggles
-                  itemAddons.drinks.map(drink => renderToggle(drink, ADDON_PRICES[drink] || 0, false))
+                  itemAddons.drinks.map(drink => renderToggle(drink, addonPrices[drink] || 0, false))
                 )}
               </div>
             </section>

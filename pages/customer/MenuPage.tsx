@@ -32,8 +32,8 @@ export const MenuPage = () => {
 
   return (
     <CustomerLayout>
-      <div className="flex-1 overflow-y-auto pb-32 no-scrollbar">
-        <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-8 animate-fade-in">
+      <div className="flex-1 overflow-y-auto no-scrollbar">
+        <div className="px-4 pt-4 pb-0 md:px-6 md:pt-6 md:pb-0 max-w-7xl mx-auto space-y-8 animate-fade-in">
           {/* Header Text */}
           <div className="text-center py-6">
             <h1 className="text-3xl font-bold text-white mb-2 font-heading uppercase">Our Menu</h1>

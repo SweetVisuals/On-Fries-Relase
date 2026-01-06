@@ -99,6 +99,11 @@ export interface StoreSettings {
   hidden_addons: string[];
 }
 
+export interface AddonPrice {
+  name: string;
+  price: number;
+}
+
 export interface StoreContextType {
   filteredMenu: MenuItem[];
   menu: MenuItem[];
@@ -134,4 +139,5 @@ export interface StoreContextType {
   isAdmin: boolean;
   settings: StoreSettings | null;
   averageOrderTime: number;
+  addonPrices: Record<string, number>;
 }

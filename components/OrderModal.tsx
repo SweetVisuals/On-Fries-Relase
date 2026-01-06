@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { X, Plus, Minus, Check, Trash2, ChevronLeft, ArrowRight, ShoppingCart, ChevronDown, ChevronUp } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { OrderItem, Order, MenuItem } from '../types';
-import { ITEM_ADDONS, ADDON_PRICES } from '../constants';
+import { ITEM_ADDONS } from '../constants';
 
 interface OrderModalProps {
   isOpen: boolean;
@@ -27,7 +27,7 @@ function usePrevious<T>(value: T): T | undefined {
 }
 
 export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderToEdit }) => {
-  const { menu, addOrder, editOrder, deleteOrder } = useStore();
+  const { menu, addOrder, editOrder, deleteOrder, addonPrices } = useStore();
   const [cart, setCart] = useState<OrderItem[]>([]);
   const [customerName, setCustomerName] = useState('');
   const [notes, setNotes] = useState('');
@@ -188,7 +188,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
     let itemPrice = item.price;
     let freeSauceAvailable = item.name === 'Kids Meal';
     item.addons.forEach(addon => {
-      let price = ADDON_PRICES[addon] || 0;
+      let price = addonPrices[addon] || 0;
       const isSauce = ['Green Sauce'].includes(addon);
       if (freeSauceAvailable && isSauce) {
         price = 0;
@@ -276,7 +276,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
                     return (
                       <button tabIndex={-1} key={addon} onClick={() => toggleAddon(addon)} className={`p-4 rounded-xl border text-left flex justify-between items-center ${selectedAddons[addon] ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'}`}>
                         <span className="font-medium">{addon}</span>
-                        <span className="text-sm font-bold text-brand-yellow">+£{ADDON_PRICES[addon]?.toFixed(2)}</span>
+                        <span className="text-sm font-bold text-brand-yellow">+£{addonPrices[addon]?.toFixed(2)}</span>
                       </button>
                     );
                   })}
@@ -308,7 +308,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
                     return (
                       <button tabIndex={-1} key={sauce} onClick={() => toggleAddon(sauce)} className={`p-4 rounded-xl border text-left flex justify-between items-center ${selectedAddons[sauce] ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'}`}>
                         <span className="font-medium">{sauce}</span>
-                        {ADDON_PRICES[sauce] && !isFree ? <span className="text-sm font-bold text-brand-yellow">+£{ADDON_PRICES[sauce]?.toFixed(2)}</span> : <span className="text-xs font-bold text-zinc-500 uppercase">Free</span>}
+                        {addonPrices[sauce] && !isFree ? <span className="text-sm font-bold text-brand-yellow">+£{addonPrices[sauce]?.toFixed(2)}</span> : <span className="text-xs font-bold text-zinc-500 uppercase">Free</span>}
                       </button>
                     )
                   })}
@@ -347,7 +347,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({ isOpen, onClose, orderTo
                           }`}
                       >
                         <span className="font-medium">{drink}</span>
-                        {customizingItem.name === 'Kids Meal' ? <span className="text-xs font-bold text-zinc-500 uppercase">Free</span> : <span className="text-sm font-bold text-brand-yellow">+£{ADDON_PRICES[drink]?.toFixed(2)}</span>}
+                        {customizingItem.name === 'Kids Meal' ? <span className="text-xs font-bold text-zinc-500 uppercase">Free</span> : <span className="text-sm font-bold text-brand-yellow">+£{addonPrices[drink]?.toFixed(2)}</span>}
                       </button>
                     );
                   })}

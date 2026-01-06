@@ -69,7 +69,7 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
         {children}
 
         {/* Legal Footer */}
-        <footer className="mt-8 pt-8 border-t border-zinc-800 text-center text-zinc-600 text-xs pb-8">
+        <footer className="mt-4 pt-8 border-t border-zinc-800 text-center text-zinc-600 text-xs pb-8">
           <p className="mb-2">We (On Fries) are acting as an agent for the restaurant.</p>
           <div className="flex justify-center gap-4">
             <Link to="/refund-policy" className="hover:text-zinc-400 transition-colors">Refund Policy</Link>

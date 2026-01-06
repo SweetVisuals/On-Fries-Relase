@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useMemo, useEffect } from '
 import { supabase } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
 import type { MenuItem, StockItem, OrderItem, Order, Customer, Supplier, StockSignature, StoreContextType, StoreSettings, CartItem } from '../types';
-import { MOCK_MENU } from '../constants';
+import { MOCK_MENU, ADDON_PRICES } from '../constants';
 
 // Mock data
 const MOCK_STOCK: StockItem[] = [
@@ -109,6 +109,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState<StoreSettings | null>(null);
   const [averageOrderTime, setAverageOrderTime] = useState<number>(15); // Default 15 mins
+  const [addonPrices, setAddonPrices] = useState<Record<string, number>>(ADDON_PRICES);
 
   const fetchSettings = async () => {
     try {
@@ -335,6 +336,38 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     fetchSuppliers();
+  }, []);
+
+  // Fetch addon prices from database
+  useEffect(() => {
+    const fetchAddonPrices = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('addon_prices')
+          .select('*');
+
+        if (error) {
+          console.error('Error fetching addon prices:', error);
+          return;
+        }
+
+        if (data && data.length > 0) {
+          const prices: Record<string, number> = {};
+          data.forEach((item: any) => {
+            prices[item.name] = Number(item.price);
+          });
+
+          setAddonPrices(prev => ({
+            ...prev,
+            ...prices
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching addon prices:', error);
+      }
+    };
+
+    fetchAddonPrices();
   }, []);
 
   // Filtered menu - temporarily disable stock filtering for debugging
@@ -936,7 +969,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       loading,
       isAdmin,
       settings: effectiveSettings,
-      averageOrderTime
+      averageOrderTime,
+      addonPrices
     }}>
       {children}
     </StoreContext.Provider>
