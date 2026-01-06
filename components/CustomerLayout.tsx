@@ -65,7 +65,7 @@ export const CustomerLayout: React.FC<CustomerLayoutProps> = ({ children }) => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 pb-24 md:pb-8 max-w-4xl mx-auto w-full p-4">
+      <main className="flex-1 pb-24 md:pb-32 max-w-4xl mx-auto w-full p-4">
         {children}
 
         {/* Legal Footer */}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { X, Plus, Minus, ShoppingBag } from 'lucide-react';
+import { X, Plus, Minus, ShoppingBag, Info } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { MenuItem, OrderItem } from '../types';
 import { ITEM_ADDONS, ADDON_PRICES, ADDON_INFO } from '../constants';
@@ -14,6 +14,7 @@ export const CustomerItemModal: React.FC<CustomerItemModalProps> = ({ isOpen, on
   const { addToCart, settings } = useStore();
   const [quantity, setQuantity] = useState(1);
   const [selections, setSelections] = useState<Record<string, number>>({});
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
   // Keeping these for Kids Meal specific logic which might need single selection
   const [selectedDrink, setSelectedDrink] = useState<string | null>(null);
   const [selectedSauce, setSelectedSauce] = useState<string | null>(null);
@@ -25,6 +26,7 @@ export const CustomerItemModal: React.FC<CustomerItemModalProps> = ({ isOpen, on
       setSelectedSauce(null);
       setQuantity(1);
       setSelections({});
+      setExpandedItems({});
     }
   }, [isOpen, item]);
 
@@ -44,6 +46,49 @@ export const CustomerItemModal: React.FC<CustomerItemModalProps> = ({ isOpen, on
     drinks: filterAddons(rawAddons.drinks)
   };
   const isMainItem = item.category === 'Main';
+
+
+  const toggleExpaded = (e: React.MouseEvent, name: string) => {
+    e.stopPropagation();
+    setExpandedItems(prev => ({
+      ...prev,
+      [name]: !prev[name]
+    }));
+  };
+
+  const renderAddonInfo = (name: string, info: any) => {
+    const isVeganOrVeg = info?.dietary?.some((d: string) => d === 'Vegan' || d === 'Vegetarian');
+    const hasAllergens = info?.allergens?.length > 0;
+
+    return (
+      <div className="flex gap-1.5 shrink-0">
+        {isVeganOrVeg && (
+          <button
+            onClick={(e) => toggleExpaded(e, name)}
+            className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors border ${expandedItems[name]
+              ? 'bg-green-500/20 text-green-500 border-green-500/40'
+              : 'bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500/20'
+              }`}
+            title="Vegetarian/Vegan"
+          >
+            V
+          </button>
+        )}
+        {hasAllergens && (
+          <button
+            onClick={(e) => toggleExpaded(e, name)}
+            className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors border ${expandedItems[name]
+              ? 'bg-red-500/20 text-red-500 border-red-500/40'
+              : 'bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20'
+              }`}
+            title="Contains Allergens"
+          >
+            <span className="font-bold font-serif text-[12px] leading-none pt-[1px]">i</span>
+          </button>
+        )}
+      </div>
+    );
+  };
 
   const updateSelection = (addonName: string, delta: number) => {
     setSelections(prev => ({
@@ -183,26 +228,45 @@ export const CustomerItemModal: React.FC<CustomerItemModalProps> = ({ isOpen, on
 
   const renderCounter = (name: string, price: number) => {
     const info = ADDON_INFO[name];
+    const isExpanded = expandedItems[name];
+
     return (
-      <div key={name} className={`p-4 rounded-xl border text-left flex justify-between items-center ${selections[name] > 0 ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900/50 border-zinc-800/50 text-zinc-400'}`}>
-        <div>
-          <span className="font-medium">{name}</span>
-          {info && (
-            <div className="flex gap-2 text-[10px] uppercase font-bold tracking-wider mt-0.5">
-              {info.allergens.length > 0 && <span className="text-red-400">Contains: {info.allergens.join(', ')}</span>}
-              {info.dietary.length > 0 && <span className="text-green-400">{info.dietary.join(', ')}</span>}
+      <div key={name} className={`p-4 rounded-xl border text-left flex justify-between items-start ${selections[name] > 0 ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900/50 border-zinc-800/50 text-zinc-400'}`}>
+        <div className="flex-1 pr-4">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="font-medium">{name}</span>
+          </div>
+          <div className="text-brand-yellow text-xs font-bold">+£{price.toFixed(2)}</div>
+
+          {/* Expanded Info */}
+          {isExpanded && (info?.allergens || info?.dietary) && (
+            <div className="mt-2 text-xs p-2 bg-black/20 rounded border border-white/5 animate-fade-in space-y-1 cursor-default" onClick={e => e.stopPropagation()}>
+              {info?.allergens?.length > 0 && (
+                <div>
+                  <span className="text-red-400 font-bold">Contains:</span> <span className="text-zinc-400">{info.allergens.join(', ')}</span>
+                </div>
+              )}
+              {info?.dietary?.length > 0 && (
+                <div>
+                  <span className="text-green-400 font-bold">Dietary:</span> <span className="text-zinc-400">{info.dietary.join(', ')}</span>
+                </div>
+              )}
             </div>
           )}
-          <div className="text-brand-yellow text-xs font-bold mt-1">+£{price.toFixed(2)}</div>
         </div>
-        <div className="flex items-center gap-2 bg-zinc-800/50 rounded-full p-1 border border-zinc-700/50">
-          <button onClick={() => updateSelection(name, -1)} className="w-8 h-8 flex items-center justify-center hover:bg-zinc-700 rounded-full text-zinc-400 hover:text-white transition-colors" disabled={!selections[name]}>
-            <Minus className="w-4 h-4" />
-          </button>
-          <span className="text-base font-bold w-5 text-center text-white">{selections[name] || 0}</span>
-          <button onClick={() => updateSelection(name, 1)} className="w-8 h-8 flex items-center justify-center hover:bg-zinc-700 rounded-full text-zinc-400 hover:text-white transition-colors">
-            <Plus className="w-4 h-4" />
-          </button>
+
+        <div className="flex flex-col items-end gap-3">
+          {renderAddonInfo(name, info)}
+
+          <div className="flex items-center gap-2 bg-zinc-800/50 rounded-full p-1 border border-zinc-700/50">
+            <button onClick={() => updateSelection(name, -1)} className="w-8 h-8 flex items-center justify-center hover:bg-zinc-700 rounded-full text-zinc-400 hover:text-white transition-colors" disabled={!selections[name]}>
+              <Minus className="w-4 h-4" />
+            </button>
+            <span className="text-base font-bold w-5 text-center text-white">{selections[name] || 0}</span>
+            <button onClick={() => updateSelection(name, 1)} className="w-8 h-8 flex items-center justify-center hover:bg-zinc-700 rounded-full text-zinc-400 hover:text-white transition-colors">
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -210,26 +274,40 @@ export const CustomerItemModal: React.FC<CustomerItemModalProps> = ({ isOpen, on
 
   const renderToggle = (name: string, price: number, isFree: boolean) => {
     const info = ADDON_INFO[name];
+    const isExpanded = expandedItems[name];
+    const isSelected = !!selections[name];
+
     return (
       <button
         key={name}
         onClick={() => toggleSelection(name)}
-        className={`p-4 rounded-xl border text-left flex justify-between items-center ${selections[name] ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'}`}
+        className={`p-4 rounded-xl border text-left flex justify-between items-start ${isSelected ? 'bg-brand-yellow/10 border-brand-yellow text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700'}`}
       >
-        <div>
+        <div className="flex-1 pr-4">
           <span className="font-medium">{name}</span>
-          {info && (
-            <div className="flex gap-2 text-[10px] uppercase font-bold tracking-wider mt-0.5">
-              {info.allergens.length > 0 && <span className="text-red-400">Contains: {info.allergens.join(', ')}</span>}
-              {info.dietary.length > 0 && <span className="text-green-400">{info.dietary.join(', ')}</span>}
+          {!isFree && <div className="text-sm font-bold text-brand-yellow mt-1">+£{price.toFixed(2)}</div>}
+          {isFree && <div className="text-xs font-bold text-zinc-500 uppercase mt-1">Free</div>}
+
+          {/* Expanded Info */}
+          {isExpanded && (info?.allergens || info?.dietary) && (
+            <div className="mt-2 text-xs p-2 bg-black/20 rounded border border-white/5 animate-fade-in space-y-1 cursor-default" onClick={e => e.stopPropagation()}>
+              {info?.allergens?.length > 0 && (
+                <div>
+                  <span className="text-red-400 font-bold">Contains:</span> <span className="text-zinc-400">{info.allergens.join(', ')}</span>
+                </div>
+              )}
+              {info?.dietary?.length > 0 && (
+                <div>
+                  <span className="text-green-400 font-bold">Dietary:</span> <span className="text-zinc-400">{info.dietary.join(', ')}</span>
+                </div>
+              )}
             </div>
           )}
         </div>
-        {isFree ? (
-          <span className="text-xs font-bold text-zinc-500 uppercase">Free</span>
-        ) : (
-          <span className="text-sm font-bold text-brand-yellow">+£{price.toFixed(2)}</span>
-        )}
+
+        <div className="flex flex-col items-end gap-3">
+          {renderAddonInfo(name, info)}
+        </div>
       </button>
     );
   };
@@ -278,31 +356,48 @@ export const CustomerItemModal: React.FC<CustomerItemModalProps> = ({ isOpen, on
                   // Radio button style for Kids Meal
                   itemAddons.sauces.map(sauce => {
                     const info = ADDON_INFO[sauce];
+                    const isExpanded = expandedItems[sauce];
+                    const isSelected = selectedSauce === sauce;
+
                     return (
                       <div
                         key={sauce}
                         onClick={() => setSelectedSauce(sauce)}
-                        className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${selectedSauce === sauce
+                        className={`flex justify-between items-start p-3 rounded-xl border cursor-pointer transition-all ${isSelected
                           ? 'bg-brand-yellow/10 border-brand-yellow'
                           : 'bg-zinc-900/50 border-zinc-800/50 hover:border-zinc-700'
                           }`}
                       >
-                        <div className="flex items-center gap-3">
-                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${selectedSauce === sauce ? 'border-brand-yellow' : 'border-zinc-600'
-                            }`}>
-                            {selectedSauce === sauce && <div className="w-3 h-3 rounded-full bg-brand-yellow" />}
+                        <div className="flex-1 pr-4">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-5 h-5 rounded-full border flex shrink-0 items-center justify-center ${isSelected ? 'border-brand-yellow' : 'border-zinc-600'
+                              }`}>
+                              {isSelected && <div className="w-3 h-3 rounded-full bg-brand-yellow" />}
+                            </div>
+                            <span className={`font-bold ${isSelected ? 'text-white' : 'text-zinc-400'}`}>{sauce}</span>
                           </div>
-                          <div>
-                            <span className={`font-bold ${selectedSauce === sauce ? 'text-white' : 'text-zinc-400'}`}>{sauce}</span>
-                            {info && (
-                              <div className="flex gap-2 text-[10px] uppercase font-bold tracking-wider mt-0.5">
-                                {info.allergens.length > 0 && <span className="text-red-400">Contains: {info.allergens.join(', ')}</span>}
-                                {info.dietary.length > 0 && <span className="text-green-400">{info.dietary.join(', ')}</span>}
-                              </div>
-                            )}
-                          </div>
+
+                          {/* Expanded Info */}
+                          {isExpanded && (info?.allergens || info?.dietary) && (
+                            <div className="mt-2 text-xs p-2 bg-black/20 rounded border border-white/5 animate-fade-in space-y-1 cursor-default" onClick={e => e.stopPropagation()}>
+                              {info?.allergens?.length > 0 && (
+                                <div>
+                                  <span className="text-red-400 font-bold">Contains:</span> <span className="text-zinc-400">{info.allergens.join(', ')}</span>
+                                </div>
+                              )}
+                              {info?.dietary?.length > 0 && (
+                                <div>
+                                  <span className="text-green-400 font-bold">Dietary:</span> <span className="text-zinc-400">{info.dietary.join(', ')}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
-                        <span className="text-brand-yellow text-xs font-bold">Free</span>
+
+                        <div className="flex flex-col items-end gap-2">
+                          {renderAddonInfo(sauce, info)}
+                          <span className="text-brand-yellow text-xs font-bold mt-1">Free</span>
+                        </div>
                       </div>
                     );
                   })
@@ -328,13 +423,13 @@ export const CustomerItemModal: React.FC<CustomerItemModalProps> = ({ isOpen, on
                       <div
                         key={drink}
                         onClick={() => setSelectedDrink(drink)}
-                        className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${selectedDrink === drink
+                        className={`flex justify-between items-center p-3 rounded-xl border cursor-pointer transition-all ${selectedDrink === drink
                           ? 'bg-brand-yellow/10 border-brand-yellow'
                           : 'bg-zinc-900/50 border-zinc-800/50 hover:border-zinc-700'
                           }`}
                       >
                         <div className="flex items-center gap-3">
-                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${selectedDrink === drink ? 'border-brand-yellow' : 'border-zinc-600'
+                          <div className={`w-5 h-5 rounded-full border flex shrink-0 items-center justify-center ${selectedDrink === drink ? 'border-brand-yellow' : 'border-zinc-600'
                             }`}>
                             {selectedDrink === drink && <div className="w-3 h-3 rounded-full bg-brand-yellow" />}
                           </div>
