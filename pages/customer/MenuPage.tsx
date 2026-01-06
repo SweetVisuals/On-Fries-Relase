@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { CustomerLayout } from '../../components/CustomerLayout';
 import { CATEGORIES } from '../../constants';
 import { Search, Clock, Plus } from 'lucide-react';
@@ -11,6 +11,16 @@ export const MenuPage = () => {
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+
+  const visibleCategories = useMemo(() => {
+    const categories = new Set<string>();
+    filteredMenu.forEach(item => {
+      if (item.is_visible) {
+        categories.add(item.category);
+      }
+    });
+    return categories;
+  }, [filteredMenu]);
 
   const displayedMenu = filteredMenu.filter(item => {
     const matchesCategory = activeCategory === 'all' || item.category === activeCategory;
@@ -44,19 +54,26 @@ export const MenuPage = () => {
 
           {/* Categories */}
           <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-            {CATEGORIES.map(cat => (
-              <button
-                key={cat.id}
-                onClick={() => setActiveCategory(cat.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors border ${activeCategory === cat.id
-                  ? 'bg-brand-yellow text-black border-brand-yellow'
-                  : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-700'
-                  }`}
-              >
-                {cat.icon}
-                {cat.label}
-              </button>
-            ))}
+            {CATEGORIES.map(cat => {
+              // Hide category if no visible items (keeping 'all' always visible)
+              if (cat.id !== 'all' && !visibleCategories.has(cat.id)) {
+                return null;
+              }
+
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors border ${activeCategory === cat.id
+                    ? 'bg-brand-yellow text-black border-brand-yellow'
+                    : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-700'
+                    }`}
+                >
+                  {cat.icon}
+                  {cat.label}
+                </button>
+              );
+            })}
           </div>
 
           {/* Grid */}
