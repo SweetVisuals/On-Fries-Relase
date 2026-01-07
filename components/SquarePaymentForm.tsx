@@ -216,12 +216,16 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
 
         if (verificationResult.token) {
           verificationToken = verificationResult.token;
-        } else {
-          // Not all cards require verification, but if it fails to produce a token when required, it might error later.
         }
-      } catch (verifyError) {
-        // Often better to fail here than let the backend fail with a less clear error
-        throw new Error('Card verification failed. Please try again.');
+      } catch (verifyError: any) {
+        console.error('Verification Error:', verifyError);
+        // If it's a timeout or unknown error, we might want to let the backend try or fail gracefully
+        // But for 3DS requirement, missing token usually means decline.
+        // We'll throw a specific error if we know it failed critical checks.
+        if (verifyError.name === 'ThreeDSMethodTimeoutError') {
+          throw new Error('Payment verification timed out. Please try again or use a different card.');
+        }
+        throw new Error(verifyError.message || 'Card verification failed. Please try again.');
       }
 
       // Call Supabase Edge Function for payment processing
