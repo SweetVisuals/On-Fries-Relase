@@ -43,8 +43,6 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
   customerName,
   disabled = false
 }) => {
-  console.log('SquarePaymentForm rendered with amount:', amount);
-  console.log('Cart data for payment:', cart);
 
   const [isLoading, setIsLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<string>('');
@@ -69,7 +67,7 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
     };
   }, []);
   useEffect(() => {
-    console.log('Initializing Square with config:', SQUARE_CONFIG);
+
 
     // Clear any existing card container content
     const cardContainer = document.getElementById('card-container');
@@ -123,10 +121,6 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
       setPaymentStatus('Initializing payment form...');
 
       const activeConfig = config || SQUARE_CONFIG;
-      console.log('Initializing Square with:', {
-        applicationId: activeConfig.applicationId,
-        locationId: activeConfig.locationId
-      });
 
       // Initialize Square Web Payments SDK
       const payments = window.Square.payments(
@@ -159,7 +153,7 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
 
       setPaymentStatus('');
     } catch (error) {
-      console.error('Failed to initialize Square:', error);
+
       onError('Failed to initialize payment system. Please try again.');
     }
   };
@@ -224,10 +218,8 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
           verificationToken = verificationResult.token;
         } else {
           // Not all cards require verification, but if it fails to produce a token when required, it might error later.
-          console.log('No verification token produced (might not be required for this card/region)');
         }
       } catch (verifyError) {
-        console.error('SCA Verification failed:', verifyError);
         // Often better to fail here than let the backend fail with a less clear error
         throw new Error('Card verification failed. Please try again.');
       }
@@ -257,7 +249,6 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
       onSuccess(paymentResponse.payment);
 
     } catch (error: any) {
-      console.error('Payment error:', error);
       const errorMessage = error.message || 'Payment failed. Please try again.';
       setPaymentStatus('');
       setPaymentError(errorMessage);
