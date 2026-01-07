@@ -59,20 +59,13 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
   const [squareFields, setSquareFields] = useState<any>(null);
   const [paymentError, setPaymentError] = useState<string | null>(null);
 
-  // Environment-based Square configuration
+  // Environment-based Square configuration - FORCED PRODUCTION
   const SQUARE_CONFIG = useMemo(() => {
-    const isProd = import.meta.env.VITE_SQUARE_ENVIRONMENT === 'production';
     return {
-      applicationId: isProd
-        ? import.meta.env.VITE_SQUARE_PROD_APP_ID
-        : import.meta.env.VITE_SQUARE_SANDBOX_APP_ID,
-      locationId: isProd
-        ? import.meta.env.VITE_SQUARE_PROD_LOCATION_ID
-        : import.meta.env.VITE_SQUARE_SANDBOX_LOCATION_ID,
-      environment: (import.meta.env.VITE_SQUARE_ENVIRONMENT?.trim() || 'production') as 'sandbox' | 'production',
-      scriptUrl: (import.meta.env.VITE_SQUARE_ENVIRONMENT?.trim() === 'sandbox')
-        ? 'https://sandbox.web.squarecdn.com/v1/square.js'
-        : 'https://web.squarecdn.com/v1/square.js'
+      applicationId: import.meta.env.VITE_SQUARE_PROD_APP_ID,
+      locationId: import.meta.env.VITE_SQUARE_PROD_LOCATION_ID,
+      environment: 'production' as const,
+      scriptUrl: 'https://web.squarecdn.com/v1/square.js'
     };
   }, []);
   useEffect(() => {
