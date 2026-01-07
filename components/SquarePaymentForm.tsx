@@ -318,6 +318,11 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
               <Loader2 className="w-5 h-5 animate-spin" />
               Processing...
             </>
+          ) : !squareFields ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Initializing Secure Payment...
+            </>
           ) : (
             `Pay £${amount.toFixed(2)}`
           )}
