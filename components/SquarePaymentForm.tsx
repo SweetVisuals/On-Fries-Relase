@@ -66,9 +66,19 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
       scriptUrl: 'https://web.squarecdn.com/v1/square.js'
     };
   }, []);
+  // Use refs to track initialization status and instances for cleanup
+  const cardInstanceRef = React.useRef<any>(null);
+  const isMountedRef = React.useRef(true);
+  const initializingRef = React.useRef(false);
+
   useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
-
+  useEffect(() => {
     // Clear any existing card container content
     const cardContainer = document.getElementById('card-container');
     if (cardContainer) {
@@ -79,13 +89,17 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
     const script = document.createElement('script');
     script.src = SQUARE_CONFIG.scriptUrl;
     script.async = true;
-    script.onload = () => initializeSquare(SQUARE_CONFIG);
+    script.onload = () => {
+      if (!initializingRef.current) {
+        initializeSquare(SQUARE_CONFIG);
+      }
+    };
     script.onerror = () => {
       onError('Failed to load Square Web Payments SDK');
     };
     document.body.appendChild(script);
 
-    // Minimal CSS for container only - Square handles iframe styling internally
+    // Minimal CSS for container only
     const style = document.createElement('style');
     style.textContent = `
       /* Container styling only */
@@ -93,6 +107,11 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
         background-color: rgb(39 39 42) !important;
         border: 1px solid rgb(63 63 70) !important;
         border-radius: 8px !important;
+        min-height: 48px;
+        transition: border-color 0.2s;
+      }
+      #card-container iframe {
+          width: 100%;
       }
     `;
     document.head.appendChild(style);
@@ -104,15 +123,18 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
       if (style.parentNode) {
         document.head.removeChild(style);
       }
-      // Clear card container on cleanup
-      const container = document.getElementById('card-container');
-      if (container) {
-        container.innerHTML = '';
+      // Destroy card instance on cleanup to prevent duplicates
+      if (cardInstanceRef.current) {
+        cardInstanceRef.current.destroy();
+        cardInstanceRef.current = null;
       }
     };
-  }, []); // SQUARE_CONFIG is memoized, so this only runs once
+  }, []); // Run once on mount
 
   const initializeSquare = async (config?: typeof SQUARE_CONFIG) => {
+    if (initializingRef.current) return;
+    initializingRef.current = true;
+
     try {
       if (!window.Square) {
         throw new Error('Square Web Payments SDK not loaded');
@@ -142,8 +164,17 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
         }
       });
 
+      // Check if still mounted before attaching
+      if (!isMountedRef.current) {
+        await card.destroy();
+        return;
+      }
+
       // Attach card to DOM element
       await card.attach('#card-container');
+
+      // Save reference
+      cardInstanceRef.current = card;
 
       // Store card reference for tokenization
       setSquareFields({
@@ -153,8 +184,12 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
 
       setPaymentStatus('');
     } catch (error) {
-
-      onError('Failed to initialize payment system. Please try again.');
+      console.error("Square initialization error:", error);
+      if (isMountedRef.current) {
+        onError('Failed to initialize payment system. Please try again.');
+      }
+    } finally {
+      initializingRef.current = false;
     }
   };
 
