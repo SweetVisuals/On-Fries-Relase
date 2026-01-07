@@ -69,8 +69,8 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
       locationId: isProd
         ? import.meta.env.VITE_SQUARE_PROD_LOCATION_ID
         : import.meta.env.VITE_SQUARE_SANDBOX_LOCATION_ID,
-      environment: (import.meta.env.VITE_SQUARE_ENVIRONMENT || 'sandbox') as 'sandbox' | 'production',
-      scriptUrl: import.meta.env.VITE_SQUARE_ENVIRONMENT === 'production'
+      environment: (import.meta.env.VITE_SQUARE_ENVIRONMENT?.trim() || 'sandbox') as 'sandbox' | 'production',
+      scriptUrl: import.meta.env.VITE_SQUARE_ENVIRONMENT?.trim() === 'production'
         ? 'https://web.squarecdn.com/v1/square.js'
         : 'https://sandbox.web.squarecdn.com/v1/square.js'
     };
