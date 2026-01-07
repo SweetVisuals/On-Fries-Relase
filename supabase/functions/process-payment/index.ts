@@ -77,8 +77,13 @@ Deno.serve(async (req) => {
         }
       })
     }
-    if (!cart || !Array.isArray(cart) || cart.length === 0 || !currency || !idempotencyKey) {
-      return new Response(JSON.stringify({ success: false, error: 'Missing required fields' }), {
+    const missingFields = [];
+    if (!cart || !Array.isArray(cart) || cart.length === 0) missingFields.push('cart');
+    if (!currency) missingFields.push('currency');
+    if (!idempotencyKey) missingFields.push('idempotencyKey');
+
+    if (missingFields.length > 0) {
+      return new Response(JSON.stringify({ success: false, error: `Missing required fields: ${missingFields.join(', ')}` }), {
         status: 200,
         headers: {
           'Content-Type': 'application/json',

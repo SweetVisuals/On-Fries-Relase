@@ -228,15 +228,19 @@ const SquarePaymentForm: React.FC<SquarePaymentFormProps> = ({
         throw new Error(verifyError.message || 'Card verification failed. Please try again.');
       }
 
+      const payload = {
+        sourceId: token,
+        verificationToken: verificationToken,
+        cart: cart,
+        currency: 'GBP',
+        idempotencyKey: `payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      };
+
+      console.log('Sending payment payload:', payload);
+
       // Call Supabase Edge Function for payment processing
       const { data, error } = await supabase.functions.invoke('process-payment', {
-        body: {
-          sourceId: token,
-          verificationToken: verificationToken,
-          cart: cart,
-          currency: 'GBP',
-          idempotencyKey: `payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-        }
+        body: payload
       });
 
       if (error) {
